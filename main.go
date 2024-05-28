@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/charmbracelet/bubbles/table"
+	// "github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -23,16 +24,32 @@ const (
     Ingress    Resource = "Ingress"
 )
 
+type item struct {
+	title string
+}
+
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.title }
+func (i item) FilterValue() string { return i.title }
+
 type model struct {
     currentResource Resource
     currentIndex    int
+    resourceList    table.Model
     table           table.Model
     width           int
     height          int
-    style           lipgloss.Style
+    tableStyle      lipgloss.Style
+    listStyle       lipgloss.Style
 }
 
 func initialModel() model {
+    resourceItems := []table.Row {
+        []string{ string(Pod) },
+        []string{ string(Deployment) },
+        []string{ string(Ingress) },
+    }
+
     columns := []table.Column {
         { Title: "Name", Width: 10 },
         { Title: "Namespace", Width: 10 },
@@ -45,7 +62,8 @@ func initialModel() model {
     }
 
     borderColor := lipgloss.Color("36")
-    style := lipgloss.NewStyle().BorderForeground(borderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(80)
+    tableStyle := lipgloss.NewStyle().BorderForeground(borderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(80)
+    listStyle := lipgloss.NewStyle().BorderForeground(borderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(20)
 
     return model{
         currentResource: "Pod",
@@ -56,7 +74,14 @@ func initialModel() model {
             table.WithFocused(true),
             table.WithHeight(7),
         ),
-        style: style,
+        resourceList: table.New(
+            table.WithColumns([]table.Column {{ Title: "Resources", Width: 10 }}),
+            table.WithRows(resourceItems),
+            table.WithFocused(true),
+            table.WithHeight(7),
+        ),
+        tableStyle: tableStyle,
+        listStyle: listStyle,
     }
 }
 
@@ -101,8 +126,8 @@ func (m model) View() string {
         lipgloss.Center,
         lipgloss.JoinHorizontal(
             lipgloss.Top,
-            string(m.currentResource),
-            m.style.Render(m.table.View()),
+            m.listStyle.Render(m.resourceList.View()),
+            m.tableStyle.Render(m.table.View()),
         ),
     )
 }
