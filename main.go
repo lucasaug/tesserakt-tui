@@ -29,6 +29,7 @@ type model struct {
     table           table.Model
     width           int
     height          int
+    style           lipgloss.Style
 }
 
 func initialModel() model {
@@ -43,6 +44,9 @@ func initialModel() model {
         rows = append(rows, pod)
     }
 
+    borderColor := lipgloss.Color("36")
+    style := lipgloss.NewStyle().BorderForeground(borderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(80)
+
     return model{
         currentResource: "Pod",
         currentIndex: 0,
@@ -52,6 +56,7 @@ func initialModel() model {
             table.WithFocused(true),
             table.WithHeight(7),
         ),
+        style: style,
     }
 }
 
@@ -89,10 +94,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-    return lipgloss.JoinHorizontal(
+    return lipgloss.Place(
+        m.width,
+        m.height,
         lipgloss.Center,
-        string(m.currentResource),
-        m.table.View(),
+        lipgloss.Center,
+        lipgloss.JoinHorizontal(
+            lipgloss.Top,
+            string(m.currentResource),
+            m.style.Render(m.table.View()),
+        ),
     )
 }
 
