@@ -32,8 +32,6 @@ func InitialResourceListModel() resourceList {
     itemListing := table.New(
         table.WithColumns(columns),
         table.WithRows(rows),
-        table.WithFocused(true),
-        table.WithHeight(7),
     )
 
     return resourceList{
@@ -43,7 +41,6 @@ func InitialResourceListModel() resourceList {
 }
 
 func (r resourceList) Init() tea.Cmd {
-    r.table.Focus()
     return nil
 }
 

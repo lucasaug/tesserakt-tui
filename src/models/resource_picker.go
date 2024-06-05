@@ -34,8 +34,7 @@ func InitialResourcePickerModel() resourcePicker {
     itemListing := table.New(
         table.WithColumns([]table.Column {{ Title: "Resources", Width: 10 }}),
         table.WithRows(resourceItems),
-        table.WithFocused(false),
-        table.WithHeight(7),
+        table.WithFocused(true),
     )
 
     return resourcePicker{
@@ -46,11 +45,15 @@ func InitialResourcePickerModel() resourcePicker {
 }
 
 func (r resourcePicker) Init() tea.Cmd {
+    r.table.Focus()
     return nil
 }
 
 func (r resourcePicker) Update(msg tea.Msg) (resourcePicker, tea.Cmd) {
-    return r, nil
+    var cmd tea.Cmd
+    r.table, cmd = r.table.Update(msg)
+
+    return r, cmd
 }
 
 func (r resourcePicker) View() string {

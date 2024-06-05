@@ -41,7 +41,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     }
 
     var cmd tea.Cmd
-    m.resourceList, cmd = m.resourceList.Update(msg)
+    m.resourcePicker, cmd = m.resourcePicker.Update(msg)
 
     return m, cmd
 }
