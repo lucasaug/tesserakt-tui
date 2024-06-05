@@ -9,15 +9,6 @@ import (
     model "github.com/lucasaug/tesserakt-tui/src/models"
 )
 
-
-type item struct {
-	title string
-}
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.title }
-func (i item) FilterValue() string { return i.title }
-
 func main() {
     f, err := tea.LogToFile("debug.log", "debug")
     if err != nil {

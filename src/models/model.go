@@ -5,25 +5,26 @@ import (
     "github.com/charmbracelet/lipgloss"
 )
 
-type model struct {
+type mainModel struct {
     width           int
     height          int
+
     resourcePicker  resourcePicker
     resourceList    resourceList
 }
 
-func InitialModel() model {
-    return model{
+func InitialModel() mainModel {
+    return mainModel{
         resourceList: InitialResourceListModel(),
         resourcePicker: InitialResourcePickerModel(),
     }
 }
 
-func (m model) Init() tea.Cmd {
+func (m mainModel) Init() tea.Cmd {
     return nil;
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
 
     case tea.WindowSizeMsg:
@@ -45,7 +46,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     return m, cmd
 }
 
-func (m model) View() string {
+func (m mainModel) View() string {
     return lipgloss.Place(
         m.width,
         m.height,
