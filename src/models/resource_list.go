@@ -5,35 +5,25 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	k8s "github.com/lucasaug/tesserakt-tui/src/k8s"
+	adapters "github.com/lucasaug/tesserakt-tui/src/adapters"
 )
 
 type resourceList struct {
     table table.Model
     style lipgloss.Style
+
+    resourceType Resource
 }
 
 func InitialResourceListModel() resourceList {
-    columns := []table.Column {
-        { Title: "Name", Width: 10 },
-        { Title: "Namespace", Width: 10 },
-        { Title: "Num of containers", Width: 20 },
-        { Title: "Conditions", Width: 20 },
-    }
-
-    rows := []table.Row {}
-    for _, pod := range k8s.GetPods() {
-        rows = append(rows, pod)
-    }
-
     borderColor := lipgloss.Color("36")
-    tableStyle := lipgloss.NewStyle().BorderForeground(borderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(80)
+    tableStyle := lipgloss.NewStyle().
+        BorderForeground(borderColor).
+        BorderStyle(lipgloss.NormalBorder()).
+        Padding(1).
+        Width(80)
 
-    itemListing := table.New(
-        table.WithColumns(columns),
-        table.WithRows(rows),
-    )
-
+    itemListing := adapters.GetPodTable()
     return resourceList{
         table: itemListing,
         style: tableStyle,
@@ -42,6 +32,19 @@ func InitialResourceListModel() resourceList {
 
 func (r resourceList) Init() tea.Cmd {
     return nil
+}
+
+func (r *resourceList) SetResource(res Resource) {
+    if r.resourceType == res { return }
+
+    r.resourceType = res
+    if res == Pod {
+        r.table = adapters.GetPodTable()
+    } else if res == Deployment {
+        r.table = adapters.GetDeploymentTable()
+    } else {
+        r.table = table.New()
+    }
 }
 
 func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {

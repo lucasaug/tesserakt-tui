@@ -1,8 +1,8 @@
 package models
 
 import (
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type mainModel struct {
@@ -42,6 +42,8 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     var cmd tea.Cmd
     m.resourcePicker, cmd = m.resourcePicker.Update(msg)
+
+    m.resourceList.SetResource(Resources[m.resourcePicker.resourceIndex])
 
     return m, cmd
 }

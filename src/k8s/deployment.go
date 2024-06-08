@@ -6,23 +6,23 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/api/core/v1"
+	"k8s.io/api/apps/v1"
 )
 
 
-func GetPods() []v1.Pod {
+func GetDeployments() []v1.Deployment {
     clientset := GetClientSet()
 
-    pods, err := clientset.
-        CoreV1().
-        Pods("default").
+    deployments, err := clientset.
+        AppsV1().
+        Deployments("default").
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
-        fmt.Printf("error getting pods: %v\n", err)
+        fmt.Printf("error getting deployments: %v\n", err)
         os.Exit(1)
     }
 
-    return pods.Items
+    return deployments.Items
 }
 
