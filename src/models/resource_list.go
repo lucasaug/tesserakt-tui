@@ -58,3 +58,10 @@ func (r resourceList) View() string {
     return r.style.Render(r.table.View())
 }
 
+func (r resourceList) Focus() {
+    r.table.Focus()
+}
+
+func (r resourceList) Blur() {
+    r.table.Blur()
+}

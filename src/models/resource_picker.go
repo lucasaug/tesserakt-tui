@@ -59,7 +59,6 @@ func InitialResourcePickerModel() resourcePicker {
 }
 
 func (r resourcePicker) Init() tea.Cmd {
-    r.table.Focus()
     return nil
 }
 
@@ -91,3 +90,10 @@ func (r resourcePicker) View() string {
     return r.style.Render(r.table.View())
 }
 
+func (r resourcePicker) Focus() {
+    r.table.Focus()
+}
+
+func (r resourcePicker) Blur() {
+    r.table.Blur()
+}

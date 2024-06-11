@@ -5,18 +5,54 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type panelPosition string
+
+const (
+    Navigation panelPosition = "Navigation"
+    Header     panelPosition = "Header"
+    Main       panelPosition = "Main"
+)
+
+type direction string
+
+const (
+    up    direction = "up"
+    left  direction = "left"
+    down  direction = "down"
+    right direction = "right"
+)
+
+// There's gotta be a better way to do this -.-'
+var nextPanel map[panelPosition](map[direction]panelPosition) = map[panelPosition](map[direction]panelPosition){
+    Navigation: map[direction]panelPosition {
+        up: Navigation,
+        left: Navigation,
+        down: Navigation,
+        right: Main,
+    },
+    Main: map[direction]panelPosition {
+        up: Main,
+        left: Navigation,
+        down: Main,
+        right: Main,
+    },
+}
+
 type mainModel struct {
     width           int
     height          int
 
-    resourcePicker  resourcePicker
-    resourceList    resourceList
+    navigation  resourcePicker
+    mainContent resourceList
+
+    currentPanel panelPosition
 }
 
 func InitialModel() mainModel {
     return mainModel{
-        resourceList: InitialResourceListModel(),
-        resourcePicker: InitialResourcePickerModel(),
+        mainContent: InitialResourceListModel(),
+        navigation: InitialResourcePickerModel(),
+        currentPanel: Navigation,
     }
 }
 
@@ -25,6 +61,7 @@ func (m mainModel) Init() tea.Cmd {
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
     switch msg := msg.(type) {
 
     case tea.WindowSizeMsg:
@@ -37,13 +74,26 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         case "ctrl+c", "q":
             return m, tea.Quit
 
+        case "h", "left":
+            m.currentPanel = nextPanel[m.currentPanel][left]
+
+        case "l", "right":
+            m.currentPanel = nextPanel[m.currentPanel][right]
+
         }
     }
 
     var cmd tea.Cmd
-    m.resourcePicker, cmd = m.resourcePicker.Update(msg)
 
-    m.resourceList.SetResource(Resources[m.resourcePicker.resourceIndex])
+    if (m.currentPanel == Main) {
+        m.mainContent.Focus()
+        m.mainContent, cmd = m.mainContent.Update(msg)
+    } else if (m.currentPanel == Navigation) {
+        m.navigation.Focus()
+        m.navigation, cmd = m.navigation.Update(msg)
+    }
+
+     m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
 
     return m, cmd
 }
@@ -56,8 +106,8 @@ func (m mainModel) View() string {
         lipgloss.Center,
         lipgloss.JoinHorizontal(
             lipgloss.Top,
-            m.resourcePicker.View(),
-            m.resourceList.View(),
+            m.navigation.View(),
+            m.mainContent.View(),
         ),
     )
 }

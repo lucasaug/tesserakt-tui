@@ -35,5 +35,6 @@ func GetPodTable() table.Model {
     return table.New(
         table.WithColumns(columns),
         table.WithRows(rows),
+        table.WithFocused(true),
     )
 }
