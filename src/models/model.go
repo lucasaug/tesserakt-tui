@@ -3,6 +3,7 @@ package models
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+        "github.com/mistakenelf/teacup/statusbar"
 )
 
 type panelPosition string
@@ -46,13 +47,34 @@ type mainModel struct {
     mainContent resourceList
 
     currentPanel panelPosition
+    statusBar    statusbar.Model
 }
 
 func InitialModel() mainModel {
+    sb := statusbar.New(
+        statusbar.ColorConfig{
+            Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
+            Background: lipgloss.AdaptiveColor{Light: "#F25D94", Dark: "#F25D94"},
+        },
+        statusbar.ColorConfig{
+            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+            Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+        },
+        statusbar.ColorConfig{
+            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+            Background: lipgloss.AdaptiveColor{Light: "#A550DF", Dark: "#A550DF"},
+        },
+        statusbar.ColorConfig{
+            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+            Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
+        },
+    )
+
     return mainModel{
         mainContent: InitialResourceListModel(),
         navigation: InitialResourcePickerModel(),
         currentPanel: Navigation,
+        statusBar: sb,
     }
 }
 
@@ -61,12 +83,24 @@ func (m mainModel) Init() tea.Cmd {
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    var cmd tea.Cmd
 
     switch msg := msg.(type) {
 
     case tea.WindowSizeMsg:
         m.width = msg.Width
         m.height = msg.Height
+
+        navigationWidth := msg.Width / 5
+        if navigationWidth > 300 {
+            navigationWidth = 300
+        }
+
+        m.mainContent.SetSize(msg.Width - navigationWidth, msg.Height)
+        m.navigation.SetSize(navigationWidth, msg.Height)
+
+        m.statusBar.SetSize(msg.Width)
+        m.statusBar.SetContent("Connected", "my-cluster-prd", "192.168.0.1", "UP")
 
     case tea.KeyMsg:
         switch msg.String() {
@@ -81,33 +115,29 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             m.currentPanel = nextPanel[m.currentPanel][right]
 
         }
+
+        if (m.currentPanel == Main) {
+            m.mainContent.Focus()
+            m.mainContent, cmd = m.mainContent.Update(msg)
+        } else if (m.currentPanel == Navigation) {
+            m.navigation.Focus()
+            m.navigation, cmd = m.navigation.Update(msg)
+        }
+
+        m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
     }
-
-    var cmd tea.Cmd
-
-    if (m.currentPanel == Main) {
-        m.mainContent.Focus()
-        m.mainContent, cmd = m.mainContent.Update(msg)
-    } else if (m.currentPanel == Navigation) {
-        m.navigation.Focus()
-        m.navigation, cmd = m.navigation.Update(msg)
-    }
-
-     m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
 
     return m, cmd
 }
 
 func (m mainModel) View() string {
-    return lipgloss.Place(
-        m.width,
-        m.height,
-        lipgloss.Center,
-        lipgloss.Center,
+    return lipgloss.JoinVertical(
+        lipgloss.Bottom,
         lipgloss.JoinHorizontal(
             lipgloss.Top,
             m.navigation.View(),
             m.mainContent.View(),
         ),
+        m.statusBar.View(),
     )
 }

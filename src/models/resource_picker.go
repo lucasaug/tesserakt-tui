@@ -42,8 +42,7 @@ func InitialResourcePickerModel() resourcePicker {
     listStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
         BorderStyle(lipgloss.NormalBorder()).
-        Padding(1).
-        Width(20)
+        Padding(1)
 
     itemListing := table.New(
         table.WithColumns(resourceHeader),
@@ -96,4 +95,9 @@ func (r resourcePicker) Focus() {
 
 func (r resourcePicker) Blur() {
     r.table.Blur()
+}
+
+func (r resourcePicker) SetSize(width int, height int) {
+    r.style.Width(width)
+    r.style.Height(height)
 }

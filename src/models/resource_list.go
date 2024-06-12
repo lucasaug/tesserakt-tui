@@ -20,8 +20,7 @@ func InitialResourceListModel() resourceList {
     tableStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
         BorderStyle(lipgloss.NormalBorder()).
-        Padding(1).
-        Width(80)
+        Padding(1)
 
     itemListing := adapters.GetPodTable()
     return resourceList{
@@ -65,3 +64,11 @@ func (r resourceList) Focus() {
 func (r resourceList) Blur() {
     r.table.Blur()
 }
+
+func (r resourceList) SetSize(width int, height int) {
+    r.style.Width(width)
+    r.style.Height(height)
+    r.table.SetWidth(width)
+    r.table.SetHeight(height)
+}
+
