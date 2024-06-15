@@ -50,31 +50,35 @@ type mainModel struct {
     statusBar    statusbar.Model
 }
 
-func InitialModel() mainModel {
+func createStatusBar() statusbar.Model {
     sb := statusbar.New(
         statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
-            Background: lipgloss.AdaptiveColor{Light: "#F25D94", Dark: "#F25D94"},
+            Foreground: lipgloss.AdaptiveColor{Dark: "15", Light: "15"},
+            Background: lipgloss.AdaptiveColor{Light: "13", Dark: "13"},
         },
         statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-            Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
+            Background: lipgloss.AdaptiveColor{Light: "238", Dark: "238"},
         },
         statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-            Background: lipgloss.AdaptiveColor{Light: "#A550DF", Dark: "#A550DF"},
+            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
+            Background: lipgloss.AdaptiveColor{Light: "171", Dark: "171"},
         },
         statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-            Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
+            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
+            Background: lipgloss.AdaptiveColor{Light: "93", Dark: "93"},
         },
     )
 
+    return sb
+}
+
+func InitialModel() mainModel {
     return mainModel{
         mainContent: InitialResourceListModel(),
         navigation: InitialResourcePickerModel(),
         currentPanel: Navigation,
-        statusBar: sb,
+        statusBar: createStatusBar(),
     }
 }
 
@@ -91,16 +95,23 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.width = msg.Width
         m.height = msg.Height
 
-        navigationWidth := msg.Width / 5
+        navigationWidth := msg.Width / 8
         if navigationWidth > 300 {
             navigationWidth = 300
         }
 
-        m.mainContent.SetSize(msg.Width - navigationWidth, msg.Height)
-        m.navigation.SetSize(navigationWidth, msg.Height)
+        mainWidth := msg.Width - navigationWidth - 5
+
+        componentHeight := msg.Height - m.statusBar.Height - 5
+
+        m.navigation.SetSize(navigationWidth, componentHeight)
+        m.mainContent.SetSize(mainWidth, componentHeight)
 
         m.statusBar.SetSize(msg.Width)
         m.statusBar.SetContent("Connected", "my-cluster-prd", "192.168.0.1", "UP")
+
+        m.mainContent, cmd = m.mainContent.Update(msg)
+        m.navigation, cmd = m.navigation.Update(msg)
 
     case tea.KeyMsg:
         switch msg.String() {
@@ -118,8 +129,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         if (m.currentPanel == Main) {
             m.mainContent.Focus()
+            m.navigation.Blur()
             m.mainContent, cmd = m.mainContent.Update(msg)
         } else if (m.currentPanel == Navigation) {
+            m.mainContent.Blur()
             m.navigation.Focus()
             m.navigation, cmd = m.navigation.Update(msg)
         }
@@ -132,7 +145,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m mainModel) View() string {
     return lipgloss.JoinVertical(
-        lipgloss.Bottom,
+        lipgloss.Top,
         lipgloss.JoinHorizontal(
             lipgloss.Top,
             m.navigation.View(),

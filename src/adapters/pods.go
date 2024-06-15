@@ -11,9 +11,9 @@ import (
 
 func GetPodTable() table.Model {
     columns := []table.Column {
-        { Title: "Name", Width: 10 },
-        { Title: "Namespace", Width: 10 },
-        { Title: "Num of containers", Width: 20 },
+        { Title: "Name", Width: 50 },
+        { Title: "Namespace", Width: 20 },
+        { Title: "Container count", Width: 15 },
         { Title: "Conditions", Width: 20 },
     }
 

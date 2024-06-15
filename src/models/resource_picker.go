@@ -25,6 +25,9 @@ type resourcePicker struct {
 
     table         table.Model
     style         lipgloss.Style
+
+    width int
+    height int
 }
 
 func InitialResourcePickerModel() resourcePicker {
@@ -37,12 +40,11 @@ func InitialResourcePickerModel() resourcePicker {
         { Title: "Resources", Width: 10 },
     }
 
-    borderColor := lipgloss.Color("36")
+    borderColor := lipgloss.Color("15")
 
     listStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
-        BorderStyle(lipgloss.NormalBorder()).
-        Padding(1)
+        BorderStyle(lipgloss.NormalBorder())
 
     itemListing := table.New(
         table.WithColumns(resourceHeader),
@@ -79,6 +81,9 @@ func (r resourcePicker) Update(msg tea.Msg) (resourcePicker, tea.Cmd) {
         }
     }
 
+    r.table.SetWidth(r.width)
+    r.table.SetHeight(r.height)
+
     var cmd tea.Cmd
     r.table, cmd = r.table.Update(msg)
 
@@ -97,7 +102,7 @@ func (r resourcePicker) Blur() {
     r.table.Blur()
 }
 
-func (r resourcePicker) SetSize(width int, height int) {
-    r.style.Width(width)
-    r.style.Height(height)
+func (r *resourcePicker) SetSize(width int, height int) {
+    r.width = width
+    r.height = height
 }

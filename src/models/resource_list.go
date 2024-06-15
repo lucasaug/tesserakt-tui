@@ -12,15 +12,17 @@ type resourceList struct {
     table table.Model
     style lipgloss.Style
 
+    width int
+    height int
+
     resourceType Resource
 }
 
 func InitialResourceListModel() resourceList {
-    borderColor := lipgloss.Color("36")
+    borderColor := lipgloss.Color("15")
     tableStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
-        BorderStyle(lipgloss.NormalBorder()).
-        Padding(1)
+        BorderStyle(lipgloss.NormalBorder())
 
     itemListing := adapters.GetPodTable()
     return resourceList{
@@ -54,6 +56,9 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
 }
 
 func (r resourceList) View() string {
+    r.table.SetWidth(r.width)
+    r.table.SetHeight(r.height)
+
     return r.style.Render(r.table.View())
 }
 
@@ -65,10 +70,8 @@ func (r resourceList) Blur() {
     r.table.Blur()
 }
 
-func (r resourceList) SetSize(width int, height int) {
-    r.style.Width(width)
-    r.style.Height(height)
-    r.table.SetWidth(width)
-    r.table.SetHeight(height)
+func (r *resourceList) SetSize(width int, height int) {
+    r.width = width
+    r.height = height
 }
 
