@@ -9,8 +9,8 @@ import (
 
 func GetDeploymentTable() table.Model {
     columns := []table.Column {
-        { Title: "Name", Width: 10 },
-        { Title: "Namespace", Width: 10 },
+        { Title: "Name", Width: 50 },
+        { Title: "Namespace", Width: 20 },
     }
 
     rows := []table.Row {}

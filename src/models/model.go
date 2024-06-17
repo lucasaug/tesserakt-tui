@@ -70,6 +70,8 @@ func createStatusBar() statusbar.Model {
         },
     )
 
+    sb.SetContent("Connected", "my-cluster-prd", "192.168.0.1", "UP")
+
     return sb
 }
 
@@ -108,7 +110,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.mainContent.SetSize(mainWidth, componentHeight)
 
         m.statusBar.SetSize(msg.Width)
-        m.statusBar.SetContent("Connected", "my-cluster-prd", "192.168.0.1", "UP")
 
         m.mainContent, cmd = m.mainContent.Update(msg)
         m.navigation, cmd = m.navigation.Update(msg)

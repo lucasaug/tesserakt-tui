@@ -6,11 +6,11 @@ import (
 	"os"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/api/core/v1"
+	v1Corev1 "k8s.io/api/core/v1"
 )
 
 
-func GetPods() []v1.Pod {
+func GetPods() []v1Corev1.Pod {
     clientset := GetClientSet()
 
     pods, err := clientset.

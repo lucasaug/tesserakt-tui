@@ -14,21 +14,16 @@ func GetPodTable() table.Model {
         { Title: "Name", Width: 50 },
         { Title: "Namespace", Width: 20 },
         { Title: "Container count", Width: 15 },
-        { Title: "Conditions", Width: 20 },
+        { Title: "Phase", Width: 20 },
     }
 
     rows := []table.Row {}
     for _, pod := range k8s.GetPods() {
-        var conditions string
-        for _, component := range pod.Status.Conditions {
-            conditions = conditions + string(component.Message) + ","
-        }
-
         rows = append(rows, table.Row{
             pod.Name,
             pod.Namespace,
             fmt.Sprint(len(pod.Spec.Containers)),
-            conditions,
+            string(pod.Status.Phase),
         })
     }
 
