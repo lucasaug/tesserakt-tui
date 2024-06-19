@@ -15,7 +15,7 @@ func GetPods() []v1Corev1.Pod {
 
     pods, err := clientset.
         CoreV1().
-        Pods("default").
+        Pods("").
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {

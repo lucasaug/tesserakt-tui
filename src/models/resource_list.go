@@ -11,6 +11,7 @@ import (
 type resourceList struct {
     table table.Model
     style lipgloss.Style
+    highlightedStyle lipgloss.Style
 
     width int
     height int
@@ -21,9 +22,11 @@ type resourceList struct {
 }
 
 func InitialResourceListModel() resourceList {
-    borderColor := lipgloss.Color("15")
     tableStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
+        BorderStyle(lipgloss.NormalBorder())
+    highlightedStyle := lipgloss.NewStyle().
+        BorderForeground(highlightColor).
         BorderStyle(lipgloss.NormalBorder())
 
     itemListing := adapters.GetPodTable()
@@ -31,6 +34,7 @@ func InitialResourceListModel() resourceList {
     return resourceList{
         table: itemListing,
         style: tableStyle,
+        highlightedStyle: highlightedStyle,
     }
 }
 
@@ -46,6 +50,8 @@ func (r *resourceList) SetResource(res Resource) {
         r.table = adapters.GetPodTable()
     } else if res == Deployment {
         r.table = adapters.GetDeploymentTable()
+    } else if res == Ingress {
+        r.table = adapters.GetIngressTable()
     } else {
         r.table = table.New()
     }
@@ -55,19 +61,16 @@ func (r *resourceList) SetResource(res Resource) {
 func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
     var cmd tea.Cmd
     r.table, cmd = r.table.Update(msg)
-
     return r, cmd
 }
 
 func (r resourceList) View() string {
-    if (r.highlighted) {
-        r.style.BorderForeground(highlightColor)
-    } else {
-        r.style.BorderForeground(borderColor)
-    }
-
     r.table.SetWidth(r.width)
     r.table.SetHeight(r.height)
+
+    if (r.highlighted) {
+        return r.highlightedStyle.Render(r.table.View())
+    }
 
     return r.style.Render(r.table.View())
 }

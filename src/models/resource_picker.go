@@ -23,8 +23,9 @@ var Resources = [...]Resource{
 type resourcePicker struct {
     resourceIndex int
 
-    table         table.Model
-    style         lipgloss.Style
+    table            table.Model
+    style            lipgloss.Style
+    highlightedStyle lipgloss.Style
 
     width int
     height int
@@ -46,6 +47,10 @@ func InitialResourcePickerModel() resourcePicker {
         BorderForeground(borderColor).
         BorderStyle(lipgloss.NormalBorder())
 
+    highlightedStyle := lipgloss.NewStyle().
+        BorderForeground(highlightColor).
+        BorderStyle(lipgloss.NormalBorder())
+
     itemListing := table.New(
         table.WithColumns(resourceHeader),
         table.WithRows(resourceItems),
@@ -56,6 +61,7 @@ func InitialResourcePickerModel() resourcePicker {
         resourceIndex: 0,
         table: itemListing,
         style: listStyle,
+        highlightedStyle: highlightedStyle,
     }
 }
 
@@ -88,15 +94,12 @@ func (r resourcePicker) Update(msg tea.Msg) (resourcePicker, tea.Cmd) {
 }
 
 func (r resourcePicker) View() string {
-    if (r.highlighted) {
-        r.style.BorderForeground(highlightColor)
-    } else {
-        r.style.BorderForeground(borderColor)
-    }
-
     r.table.SetWidth(r.width)
     r.table.SetHeight(r.height)
 
+    if (r.highlighted) {
+        return r.highlightedStyle.Render(r.table.View())
+    }
     return r.style.Render(r.table.View())
 }
 
