@@ -76,9 +76,15 @@ func createStatusBar() statusbar.Model {
 }
 
 func InitialModel() mainModel {
+    mainContent := InitialResourceListModel()
+    navigation := InitialResourcePickerModel()
+
+    mainContent.SetHighlight(true)
+    navigation.SetHighlight(false)
+
     return mainModel{
-        mainContent: InitialResourceListModel(),
-        navigation: InitialResourcePickerModel(),
+        mainContent: mainContent,
+        navigation: navigation,
         currentPanel: Navigation,
         statusBar: createStatusBar(),
     }
@@ -98,13 +104,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.height = msg.Height
 
         navigationWidth := msg.Width / 8
-        if navigationWidth > 300 {
-            navigationWidth = 300
-        }
 
-        mainWidth := msg.Width - navigationWidth - 5
+        mainWidth := msg.Width - navigationWidth - 4
 
-        componentHeight := msg.Height - m.statusBar.Height - 5
+        componentHeight := msg.Height - m.statusBar.Height - 4
 
         m.navigation.SetSize(navigationWidth, componentHeight)
         m.mainContent.SetSize(mainWidth, componentHeight)
@@ -145,6 +148,14 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) View() string {
+    if (m.currentPanel == Main) {
+        m.mainContent.SetHighlight(true)
+        m.navigation.SetHighlight(false)
+    } else if (m.currentPanel == Navigation) {
+        m.mainContent.SetHighlight(false)
+        m.navigation.SetHighlight(true)
+    }
+
     return lipgloss.JoinVertical(
         lipgloss.Top,
         lipgloss.JoinHorizontal(

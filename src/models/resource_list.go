@@ -16,6 +16,8 @@ type resourceList struct {
     height int
 
     resourceType Resource
+
+    highlighted bool
 }
 
 func InitialResourceListModel() resourceList {
@@ -25,6 +27,7 @@ func InitialResourceListModel() resourceList {
         BorderStyle(lipgloss.NormalBorder())
 
     itemListing := adapters.GetPodTable()
+
     return resourceList{
         table: itemListing,
         style: tableStyle,
@@ -46,6 +49,7 @@ func (r *resourceList) SetResource(res Resource) {
     } else {
         r.table = table.New()
     }
+
 }
 
 func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
@@ -56,6 +60,12 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
 }
 
 func (r resourceList) View() string {
+    if (r.highlighted) {
+        r.style.BorderForeground(highlightColor)
+    } else {
+        r.style.BorderForeground(borderColor)
+    }
+
     r.table.SetWidth(r.width)
     r.table.SetHeight(r.height)
 
@@ -75,3 +85,6 @@ func (r *resourceList) SetSize(width int, height int) {
     r.height = height
 }
 
+func (r *resourceList) SetHighlight(highlighted bool) {
+    r.highlighted = highlighted
+}
