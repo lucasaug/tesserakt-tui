@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 
-func GetIngresses() []v1.Ingress {
-    clientset := GetClientSet()
-
+func GetIngresses(clientset *kubernetes.Clientset) []v1.Ingress {
     pods, err := clientset.
         NetworkingV1().
         Ingresses("").

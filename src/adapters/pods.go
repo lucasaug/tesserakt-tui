@@ -4,21 +4,22 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
+	"k8s.io/client-go/kubernetes"
 
 	k8s "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 
-func GetPodTable() table.Model {
+func GetPodTable(clientset *kubernetes.Clientset) table.Model {
     columns := []table.Column {
-        { Title: "Name", Width: 50 },
-        { Title: "Namespace", Width: 20 },
+        { Title: "Name", Width: 40 },
+        { Title: "Namespace", Width: 15 },
         { Title: "Container count", Width: 15 },
         { Title: "Phase", Width: 20 },
     }
 
     rows := []table.Row {}
-    for _, pod := range k8s.GetPods() {
+    for _, pod := range k8s.GetPods(clientset) {
         rows = append(rows, table.Row{
             pod.Name,
             pod.Namespace,

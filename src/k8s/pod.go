@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1Corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 
-func GetPods() []v1Corev1.Pod {
-    clientset := GetClientSet()
-
+func GetPods(clientset *kubernetes.Clientset) []v1Corev1.Pod {
     pods, err := clientset.
         CoreV1().
         Pods("").

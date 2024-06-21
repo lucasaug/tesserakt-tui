@@ -3,7 +3,10 @@ package models
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-        "github.com/mistakenelf/teacup/statusbar"
+	"github.com/mistakenelf/teacup/statusbar"
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 type panelPosition string
@@ -40,6 +43,8 @@ var nextPanel map[panelPosition](map[direction]panelPosition) = map[panelPositio
 }
 
 type mainModel struct {
+    clientset *kubernetes.Clientset
+
     width           int
     height          int
 
@@ -90,14 +95,34 @@ func InitialModel() mainModel {
     }
 }
 
+func getKubernetesClient() tea.Msg {
+    clientset := k8s.GetClientSet()
+    return k8sClientMsg{clientset}
+}
+
+type k8sClientMsg struct { clientset *kubernetes.Clientset }
+
 func (m mainModel) Init() tea.Cmd {
-    return nil;
+    mainContentCmd := m.mainContent.Init()
+    return tea.Sequence(getKubernetesClient, mainContentCmd)
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     var cmd tea.Cmd
 
     switch msg := msg.(type) {
+
+    case k8sClientMsg:
+        m.clientset = msg.clientset
+        m.mainContent, cmd = m.mainContent.Update(msg)
+
+        m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
+
+        return m, cmd
+
+    case ResourceUpdateMsg:
+        m.mainContent, cmd = m.mainContent.Update(msg)
+        return m, cmd
 
     case tea.WindowSizeMsg:
         m.width = msg.Width
@@ -119,7 +144,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     case tea.KeyMsg:
         switch msg.String() {
-
         case "ctrl+c", "q":
             return m, tea.Quit
 
@@ -128,7 +152,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         case "l", "right":
             m.currentPanel = nextPanel[m.currentPanel][right]
-
         }
 
         if (m.currentPanel == Main) {
