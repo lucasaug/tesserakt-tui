@@ -115,12 +115,11 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     case k8sClientMsg:
         m.clientset = msg.clientset
         m.mainContent, cmd = m.mainContent.Update(msg)
-
         m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
 
-        return m, cmd
+        return m, tea.Batch(m.mainContent.refreshList, cmd)
 
-    case ResourceUpdateMsg:
+    case RefreshListMsg, TickMsg:
         m.mainContent, cmd = m.mainContent.Update(msg)
         return m, cmd
 
@@ -161,10 +160,18 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         } else if (m.currentPanel == Navigation) {
             m.mainContent.Blur()
             m.navigation.Focus()
+
+            previousResourceIndex := m.navigation.resourceIndex
             m.navigation, cmd = m.navigation.Update(msg)
+
+            if previousResourceIndex != m.navigation.resourceIndex {
+                m.mainContent.SetResource(
+                    Resources[m.navigation.resourceIndex],
+                )
+                return m, tea.Sequence(cmd, m.mainContent.refreshList)
+            }
         }
 
-        m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
     }
 
     return m, cmd

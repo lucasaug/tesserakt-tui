@@ -44,34 +44,43 @@ func (r *resourceList) SetResource(res Resource) {
     r.resourceType = res
 }
 
-const TICK_INTERVAL = time.Second
+const TICK_INTERVAL = time.Millisecond * 500
 
-type ResourceUpdateMsg struct { table table.Model }
+type TickMsg time.Time
 
-func (r resourceList) createScheduleResourceUpdateCmd() tea.Cmd {
+func tick() tea.Cmd {
     return tea.Tick(TICK_INTERVAL, func(t time.Time) tea.Msg {
-        return r.UpdateResourceCmd()
+        return TickMsg(t)
     })
 }
 
-func (r resourceList) UpdateResourceCmd() tea.Msg {
-    var result table.Model
+type RefreshListMsg struct { table table.Model }
+type EmptyMsg struct {}
+
+func (r resourceList) refreshList() tea.Msg {
+    if (r.clientset == nil) { return EmptyMsg{} }
 
     if r.resourceType == Pod {
-        result = adapters.GetPodTable(r.clientset)
+        return RefreshListMsg{
+            table: adapters.GetPodTable(r.clientset),
+        }
     } else if r.resourceType == Deployment {
-        result = adapters.GetDeploymentTable(r.clientset)
+        return RefreshListMsg{
+            table: adapters.GetDeploymentTable(r.clientset),
+        }
     } else if r.resourceType == Ingress {
-        result = adapters.GetIngressTable(r.clientset)
-    } else {
-        result = table.New()
+        return RefreshListMsg{
+            table: adapters.GetIngressTable(r.clientset),
+        }
     }
 
-    return ResourceUpdateMsg{table: result}
+    return RefreshListMsg{
+        table: table.New(),
+    }
 }
 
 func (r resourceList) Init() tea.Cmd {
-    return nil
+    return tick()
 }
 
 func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
@@ -80,11 +89,12 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
     switch msg := msg.(type) {
     case k8sClientMsg:
         r.clientset = msg.clientset
-        return r, r.UpdateResourceCmd
 
-    case ResourceUpdateMsg:
+    case TickMsg:
+        return r, tea.Batch(r.refreshList, tick())
+
+    case RefreshListMsg:
         r.table = msg.table
-        return r, r.UpdateResourceCmd
 
     }
 
