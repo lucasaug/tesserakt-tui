@@ -14,7 +14,6 @@ import (
 type resourceList struct {
     clientset *kubernetes.Clientset
 
-    table table.Model
     style lipgloss.Style
     highlightedStyle lipgloss.Style
 
@@ -22,6 +21,7 @@ type resourceList struct {
     height int
 
     resourceType Resource
+    resourceTables map[Resource]*table.Model
 
     highlighted bool
 }
@@ -54,28 +54,52 @@ func tick() tea.Cmd {
     })
 }
 
-type RefreshListMsg struct { table table.Model }
+type RefreshRowsMsg struct {
+    rows []table.Row
+    resource Resource
+}
+type LoadTablesMsg struct { tables map[Resource]*table.Model }
 type EmptyMsg struct {}
 
 func (r resourceList) refreshList() tea.Msg {
     if (r.clientset == nil) { return EmptyMsg{} }
 
     if r.resourceType == Pod {
-        return RefreshListMsg{
-            table: adapters.GetPodTable(r.clientset),
+        return RefreshRowsMsg{
+            rows: adapters.GetPodRows(r.clientset),
+            resource: r.resourceType,
         }
     } else if r.resourceType == Deployment {
-        return RefreshListMsg{
-            table: adapters.GetDeploymentTable(r.clientset),
+        return RefreshRowsMsg{
+            rows: adapters.GetDeploymentRows(r.clientset),
+            resource: r.resourceType,
         }
     } else if r.resourceType == Ingress {
-        return RefreshListMsg{
-            table: adapters.GetIngressTable(r.clientset),
+        return RefreshRowsMsg{
+            rows: adapters.GetIngressRows(r.clientset),
+            resource: r.resourceType,
         }
     }
 
-    return RefreshListMsg{
-        table: table.New(),
+    return RefreshRowsMsg{
+        rows: []table.Row{},
+        resource: r.resourceType,
+    }
+}
+
+func createLoadTables(clientset *kubernetes.Clientset) tea.Cmd {
+    return func() tea.Msg {
+        podTable := adapters.GetPodTable(clientset)
+        deploymentTable := adapters.GetDeploymentTable(clientset)
+        ingressTable := adapters.GetIngressTable(clientset)
+
+        tables := map[Resource]*table.Model {
+            Pod: &podTable,
+            Deployment: &deploymentTable,
+            Ingress: &ingressTable,
+        }
+
+        return LoadTablesMsg{tables: tables}
     }
 }
 
@@ -89,36 +113,49 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
     switch msg := msg.(type) {
     case k8sClientMsg:
         r.clientset = msg.clientset
+        return r, createLoadTables(r.clientset)
 
     case TickMsg:
         return r, tea.Batch(r.refreshList, tick())
 
-    case RefreshListMsg:
-        r.table = msg.table
+    case LoadTablesMsg:
+        r.resourceTables = msg.tables
+
+    case RefreshRowsMsg:
+        if (len(r.resourceTables) != 0) {
+            r.resourceTables[msg.resource].SetRows(msg.rows)
+        }
 
     }
 
-    r.table, cmd = r.table.Update(msg)
+    if (len(r.resourceTables) != 0) {
+        *r.resourceTables[r.resourceType], cmd = r.resourceTables[r.resourceType].Update(msg)
+    }
+
     return r, cmd
 }
 
 func (r resourceList) View() string {
-    r.table.SetWidth(r.width)
-    r.table.SetHeight(r.height)
+    if (len(r.resourceTables) == 0) { return "" }
+
+    r.resourceTables[r.resourceType].SetWidth(r.width)
+    r.resourceTables[r.resourceType].SetHeight(r.height)
 
     if (r.highlighted) {
-        return r.highlightedStyle.Render(r.table.View())
+        return r.highlightedStyle.Render(
+            r.resourceTables[r.resourceType].View(),
+        )
     }
 
-    return r.style.Render(r.table.View())
+    return r.style.Render(r.resourceTables[r.resourceType].View())
 }
 
 func (r resourceList) Focus() {
-    r.table.Focus()
+    r.resourceTables[r.resourceType].Focus()
 }
 
 func (r resourceList) Blur() {
-    r.table.Blur()
+    r.resourceTables[r.resourceType].Blur()
 }
 
 func (r *resourceList) SetSize(width int, height int) {

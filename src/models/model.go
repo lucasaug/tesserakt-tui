@@ -119,7 +119,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         return m, tea.Batch(m.mainContent.refreshList, cmd)
 
-    case RefreshListMsg, TickMsg:
+    case RefreshRowsMsg, TickMsg, LoadTablesMsg:
         m.mainContent, cmd = m.mainContent.Update(msg)
         return m, cmd
 
