@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
@@ -59,7 +61,7 @@ func createStatusBar() statusbar.Model {
     sb := statusbar.New(
         statusbar.ColorConfig{
             Foreground: lipgloss.AdaptiveColor{Dark: "15", Light: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "13", Dark: "13"},
+            Background: lipgloss.AdaptiveColor{Light: "2", Dark: "2"},
         },
         statusbar.ColorConfig{
             Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
@@ -67,15 +69,15 @@ func createStatusBar() statusbar.Model {
         },
         statusbar.ColorConfig{
             Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "171", Dark: "171"},
+            Background: lipgloss.AdaptiveColor{Light: "93", Dark: "93"},
         },
         statusbar.ColorConfig{
             Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "93", Dark: "93"},
+            Background: lipgloss.AdaptiveColor{Light: "171", Dark: "171"},
         },
     )
 
-    sb.SetContent("Connected", "my-cluster-prd", "192.168.0.1", "UP")
+    sb.SetContent("Connected", "cluster name", "", "UP")
 
     return sb
 }
@@ -102,6 +104,25 @@ func getKubernetesClient() tea.Msg {
 
 type k8sClientMsg struct { clientset *kubernetes.Clientset }
 
+type statusBarUpdateMsg struct {contents [4]string}
+
+func (m mainModel) updateStatus() tea.Msg {
+    nodes := k8s.GetNodes(m.clientset)
+
+    nodeText := fmt.Sprint(len(nodes), " nodes")
+    if len(nodes) == 1 {
+        nodeText = "1 node"
+    }
+
+    contents := [...]string{
+        "Connected",
+        "cluster name",
+        nodeText,
+        "UP",
+    }
+    return statusBarUpdateMsg{ contents: contents }
+}
+
 func (m mainModel) Init() tea.Cmd {
     mainContentCmd := m.mainContent.Init()
     return tea.Sequence(getKubernetesClient, mainContentCmd)
@@ -117,9 +138,26 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.mainContent, cmd = m.mainContent.Update(msg)
         m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
 
-        return m, tea.Batch(m.mainContent.refreshList, cmd)
+        return m, tea.Batch(
+            m.updateStatus,
+            m.mainContent.refreshList,
+            cmd,
+        )
 
-    case RefreshRowsMsg, TickMsg, LoadTablesMsg:
+    case statusBarUpdateMsg:
+        m.statusBar.SetContent(
+            msg.contents[0],
+            msg.contents[1],
+            msg.contents[2],
+            msg.contents[3],
+        )
+
+    case TickMsg:
+        m.mainContent, cmd = m.mainContent.Update(msg)
+
+        return m, tea.Batch(m.updateStatus, cmd)
+
+    case RefreshRowsMsg, LoadTablesMsg:
         m.mainContent, cmd = m.mainContent.Update(msg)
         return m, cmd
 
