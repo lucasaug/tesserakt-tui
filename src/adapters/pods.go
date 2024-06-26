@@ -1,13 +1,30 @@
 package adapters
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/bubbles/table"
 	"k8s.io/client-go/kubernetes"
 
 	k8s "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
+
+func GetPodJson(
+    clientset *kubernetes.Clientset,
+    name, namespace string,
+) string {
+    pod := k8s.GetPod(clientset, name, namespace)
+
+    data, err := json.MarshalIndent(pod, "", "    ")
+    if err != nil {
+        fmt.Printf("error getting json from pod: %v\n", err)
+        os.Exit(1)
+    }
+
+    return string(data)
+}
 
 func GetPodRows(clientset *kubernetes.Clientset) []table.Row {
     rows := []table.Row {}

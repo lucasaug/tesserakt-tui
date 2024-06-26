@@ -1,11 +1,31 @@
 package adapters
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+
 	"github.com/charmbracelet/bubbles/table"
 	"k8s.io/client-go/kubernetes"
 
 	k8s "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
+
+func GetIngressJson(
+    clientset *kubernetes.Clientset,
+    name, namespace string,
+) string {
+    ingress := k8s.GetIngress(clientset, name, namespace)
+
+    data, err := json.MarshalIndent(ingress, "", "    ")
+    if err != nil {
+        fmt.Printf("error getting json from ingress: %v\n", err)
+        os.Exit(1)
+    }
+
+    return string(data)
+}
+
 
 func GetIngressRows(clientset *kubernetes.Clientset) []table.Row {
     rows := []table.Row {}

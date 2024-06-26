@@ -1,9 +1,6 @@
 package adapters
 
 import (
-	// "encoding/json"
-	// "fmt"
-
 	"encoding/json"
 	"fmt"
 	"os"
@@ -20,7 +17,7 @@ func GetDeploymentJson(
 ) string {
     deployment := k8s.GetDeployment(clientset, name, namespace)
 
-    data, err := json.Marshal(deployment)
+    data, err := json.MarshalIndent(deployment, "", "    ")
     if err != nil {
         fmt.Printf("error getting json from deployment: %v\n", err)
         os.Exit(1)

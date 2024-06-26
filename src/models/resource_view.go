@@ -39,16 +39,19 @@ type resourceView struct {
 }
 
 func InitialResourceViewModel() resourceView {
-    tableStyle := lipgloss.NewStyle().
+    viewStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
         BorderStyle(lipgloss.NormalBorder())
     highlightedStyle := lipgloss.NewStyle().
         BorderForeground(highlightColor).
         BorderStyle(lipgloss.NormalBorder())
 
+    cv := viewport.New(0, 0)
+
     return resourceView{
-        style: tableStyle,
+        style: viewStyle,
         highlightedStyle: highlightedStyle,
+        contentViewport: &cv,
     }
 }
 
@@ -108,11 +111,11 @@ func createResourceDetails(
     return func() tea.Msg {
         var data string
         if (resourceType == Pod) {
-            // data = adapters.GetPodJson(&clientset, name, namespace)
+            data = adapters.GetPodJson(&clientset, name, namespace)
         } else if (resourceType == Deployment) {
             data = adapters.GetDeploymentJson(&clientset, name, namespace)
         } else if (resourceType == Ingress) {
-            // data = adapters.GetIngressJson(&clientset, name, namespace)
+            data = adapters.GetIngressJson(&clientset, name, namespace)
         }
 
         return ResourceDetailsMsg{
@@ -179,19 +182,25 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
             return r, createResourceDetails(*r.clientset, r.resourceType, name, namespace)
 
         case "k", "up":
-            if (r.itemIndex > 0) {
+            if (r.itemIndex > 0 && r.selectedResource == nil) {
                 r.itemIndex--
             }
 
         case "j", "down":
-            if (r.itemIndex < len(r.resourceTables[r.resourceType].Rows()) - 1) {
+            if (r.itemIndex < len(r.resourceTables[r.resourceType].Rows()) - 1 &&
+                r.selectedResource == nil) {
                 r.itemIndex++
             }
+
+        case "esc":
+            r.selectedResource = nil
 
         }
     }
 
-    if (len(r.resourceTables) != 0) {
+    if (r.selectedResource != nil) {
+        *r.contentViewport, cmd = r.contentViewport.Update(msg)
+    } else if (len(r.resourceTables) != 0) {
         *r.resourceTables[r.resourceType], cmd = r.resourceTables[r.resourceType].Update(msg)
     }
 
@@ -200,7 +209,14 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
 
 func (r resourceView) View() string {
     if (r.selectedResource != nil) {
+        r.contentViewport.Width = r.width
+        r.contentViewport.Height = r.height
         r.contentViewport.SetContent(r.selectedResource.data)
+        if (r.highlighted) {
+            return r.highlightedStyle.Render(
+                r.contentViewport.View(),
+            )
+        }
         return r.style.Render(r.contentViewport.View())
     }
     if (len(r.resourceTables) == 0) { return "" }

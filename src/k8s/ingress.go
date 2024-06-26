@@ -18,10 +18,26 @@ func GetIngresses(clientset *kubernetes.Clientset) []v1.Ingress {
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
-        fmt.Printf("error getting pods: %v\n", err)
+        fmt.Printf("error getting ingress: %v\n", err)
         os.Exit(1)
     }
 
     return pods.Items
 }
 
+func GetIngress(
+    clientset *kubernetes.Clientset,
+    name, namespace string,
+) *v1.Ingress {
+    ingress, err := clientset.
+        NetworkingV1().
+        Ingresses(namespace).
+	Get(context.Background(), name, metav1.GetOptions{})
+
+    if err != nil {
+        fmt.Printf("error getting ingress: %v\n", err)
+        os.Exit(1)
+    }
+
+    return ingress
+}
