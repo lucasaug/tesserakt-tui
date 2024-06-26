@@ -1,11 +1,33 @@
 package adapters
 
 import (
+	// "encoding/json"
+	// "fmt"
+
+	"encoding/json"
+	"fmt"
+	"os"
+
 	"github.com/charmbracelet/bubbles/table"
 	"k8s.io/client-go/kubernetes"
 
 	k8s "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
+
+func GetDeploymentJson(
+    clientset *kubernetes.Clientset,
+    name, namespace string,
+) string {
+    deployment := k8s.GetDeployment(clientset, name, namespace)
+
+    data, err := json.Marshal(deployment)
+    if err != nil {
+        fmt.Printf("error getting json from deployment: %v\n", err)
+        os.Exit(1)
+    }
+
+    return string(data)
+}
 
 func GetDeploymentRows(clientset *kubernetes.Clientset) []table.Row {
     rows := []table.Row {}

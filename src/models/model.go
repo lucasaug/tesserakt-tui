@@ -51,7 +51,7 @@ type mainModel struct {
     height          int
 
     navigation  resourcePicker
-    mainContent resourceList
+    mainContent resourceView
 
     currentPanel panelPosition
     statusBar    statusbar.Model
@@ -83,7 +83,7 @@ func createStatusBar() statusbar.Model {
 }
 
 func InitialModel() mainModel {
-    mainContent := InitialResourceListModel()
+    mainContent := InitialResourceViewModel()
     navigation := InitialResourcePickerModel()
 
     mainContent.SetHighlight(true)

@@ -25,3 +25,20 @@ func GetDeployments(clientset *kubernetes.Clientset) []v1.Deployment {
     return deployments.Items
 }
 
+func GetDeployment(
+    clientset *kubernetes.Clientset,
+    name, namespace string,
+) *v1.Deployment {
+    deployment, err := clientset.
+        AppsV1().
+        Deployments(namespace).
+	Get(context.Background(), name, metav1.GetOptions{})
+
+    if err != nil {
+        fmt.Printf("error getting deployment: %v\n", err)
+        os.Exit(1)
+    }
+
+    return deployment
+}
+

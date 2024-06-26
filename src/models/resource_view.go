@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"k8s.io/client-go/kubernetes"
@@ -11,8 +12,17 @@ import (
 	"github.com/lucasaug/tesserakt-tui/src/adapters"
 )
 
-type resourceList struct {
+type resourceSelector struct {
+    name string
+    namespace string
+    resourceType Resource
+    editable bool
+    data string
+}
+
+type resourceView struct {
     clientset *kubernetes.Clientset
+    itemIndex int
 
     style lipgloss.Style
     highlightedStyle lipgloss.Style
@@ -22,11 +32,13 @@ type resourceList struct {
 
     resourceType Resource
     resourceTables map[Resource]*table.Model
+    contentViewport *viewport.Model
 
+    selectedResource *resourceSelector
     highlighted bool
 }
 
-func InitialResourceListModel() resourceList {
+func InitialResourceViewModel() resourceView {
     tableStyle := lipgloss.NewStyle().
         BorderForeground(borderColor).
         BorderStyle(lipgloss.NormalBorder())
@@ -34,13 +46,13 @@ func InitialResourceListModel() resourceList {
         BorderForeground(highlightColor).
         BorderStyle(lipgloss.NormalBorder())
 
-    return resourceList{
+    return resourceView{
         style: tableStyle,
         highlightedStyle: highlightedStyle,
     }
 }
 
-func (r *resourceList) SetResource(res Resource) {
+func (r *resourceView) SetResource(res Resource) {
     r.resourceType = res
 }
 
@@ -58,10 +70,9 @@ type RefreshRowsMsg struct {
     rows []table.Row
     resource Resource
 }
-type LoadTablesMsg struct { tables map[Resource]*table.Model }
 type EmptyMsg struct {}
 
-func (r resourceList) refreshList() tea.Msg {
+func (r resourceView) refreshList() tea.Msg {
     if (r.clientset == nil) { return EmptyMsg{} }
 
     if r.resourceType == Pod {
@@ -87,6 +98,36 @@ func (r resourceList) refreshList() tea.Msg {
     }
 }
 
+type ResourceDetailsMsg struct { value resourceSelector }
+
+func createResourceDetails(
+    clientset kubernetes.Clientset,
+    resourceType Resource,
+    name, namespace string,
+) tea.Cmd {
+    return func() tea.Msg {
+        var data string
+        if (resourceType == Pod) {
+            // data = adapters.GetPodJson(&clientset, name, namespace)
+        } else if (resourceType == Deployment) {
+            data = adapters.GetDeploymentJson(&clientset, name, namespace)
+        } else if (resourceType == Ingress) {
+            // data = adapters.GetIngressJson(&clientset, name, namespace)
+        }
+
+        return ResourceDetailsMsg{
+            value: resourceSelector{
+                name: name,
+                namespace: namespace,
+                resourceType: resourceType,
+                editable: false,
+                data: data,
+            },
+        }
+    }
+}
+
+type LoadTablesMsg struct { tables map[Resource]*table.Model }
 func createLoadTables(clientset *kubernetes.Clientset) tea.Cmd {
     return func() tea.Msg {
         podTable := adapters.GetPodTable(clientset)
@@ -103,11 +144,11 @@ func createLoadTables(clientset *kubernetes.Clientset) tea.Cmd {
     }
 }
 
-func (r resourceList) Init() tea.Cmd {
+func (r resourceView) Init() tea.Cmd {
     return tick()
 }
 
-func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
+func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
     var cmd tea.Cmd
 
     switch msg := msg.(type) {
@@ -126,6 +167,28 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
             r.resourceTables[msg.resource].SetRows(msg.rows)
         }
 
+    case ResourceDetailsMsg:
+        r.selectedResource = &msg.value
+
+    case tea.KeyMsg:
+        switch msg.String() {
+
+        case "enter":
+            name := r.resourceTables[r.resourceType].Rows()[r.itemIndex][0]
+            namespace := r.resourceTables[r.resourceType].Rows()[r.itemIndex][1]
+            return r, createResourceDetails(*r.clientset, r.resourceType, name, namespace)
+
+        case "k", "up":
+            if (r.itemIndex > 0) {
+                r.itemIndex--
+            }
+
+        case "j", "down":
+            if (r.itemIndex < len(r.resourceTables[r.resourceType].Rows()) - 1) {
+                r.itemIndex++
+            }
+
+        }
     }
 
     if (len(r.resourceTables) != 0) {
@@ -135,7 +198,11 @@ func (r resourceList) Update(msg tea.Msg) (resourceList, tea.Cmd) {
     return r, cmd
 }
 
-func (r resourceList) View() string {
+func (r resourceView) View() string {
+    if (r.selectedResource != nil) {
+        r.contentViewport.SetContent(r.selectedResource.data)
+        return r.style.Render(r.contentViewport.View())
+    }
     if (len(r.resourceTables) == 0) { return "" }
 
     r.resourceTables[r.resourceType].SetWidth(r.width)
@@ -150,19 +217,19 @@ func (r resourceList) View() string {
     return r.style.Render(r.resourceTables[r.resourceType].View())
 }
 
-func (r resourceList) Focus() {
+func (r resourceView) Focus() {
     r.resourceTables[r.resourceType].Focus()
 }
 
-func (r resourceList) Blur() {
+func (r resourceView) Blur() {
     r.resourceTables[r.resourceType].Blur()
 }
 
-func (r *resourceList) SetSize(width int, height int) {
+func (r *resourceView) SetSize(width int, height int) {
     r.width = width
     r.height = height
 }
 
-func (r *resourceList) SetHighlight(highlighted bool) {
+func (r *resourceView) SetHighlight(highlighted bool) {
     r.highlighted = highlighted
 }
