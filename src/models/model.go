@@ -2,14 +2,19 @@ package models
 
 import (
 	"fmt"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mistakenelf/teacup/statusbar"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/lucasaug/tesserakt-tui/src/core"
+	"github.com/lucasaug/tesserakt-tui/src/commands"
 	"github.com/lucasaug/tesserakt-tui/src/k8s"
 )
+
+const TICK_INTERVAL = time.Millisecond * 500
 
 type panelPosition string
 
@@ -28,21 +33,21 @@ const (
     right direction = "right"
 )
 
-// There's gotta be a better way to do this -.-'
-var nextPanel map[panelPosition](map[direction]panelPosition) = map[panelPosition](map[direction]panelPosition){
-    Navigation: map[direction]panelPosition {
-        up: Navigation,
-        left: Navigation,
-        down: Navigation,
-        right: Main,
-    },
-    Main: map[direction]panelPosition {
-        up: Main,
-        left: Navigation,
-        down: Main,
-        right: Main,
-    },
-}
+var nextPanel map[panelPosition](map[direction]panelPosition) =
+    map[panelPosition](map[direction]panelPosition){
+        Navigation: map[direction]panelPosition {
+            up: Navigation,
+            left: Navigation,
+            down: Navigation,
+            right: Main,
+        },
+        Main: map[direction]panelPosition {
+            up: Main,
+            left: Navigation,
+            down: Main,
+            right: Main,
+        },
+    }
 
 type mainModel struct {
     clientset *kubernetes.Clientset
@@ -53,33 +58,9 @@ type mainModel struct {
     navigation  resourcePicker
     mainContent resourceView
 
-    currentPanel panelPosition
     statusBar    statusbar.Model
-}
 
-func createStatusBar() statusbar.Model {
-    sb := statusbar.New(
-        statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Dark: "15", Light: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "2", Dark: "2"},
-        },
-        statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "238", Dark: "238"},
-        },
-        statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "93", Dark: "93"},
-        },
-        statusbar.ColorConfig{
-            Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "171", Dark: "171"},
-        },
-    )
-
-    sb.SetContent("Connected", "cluster name", "", "UP")
-
-    return sb
+    currentPanel panelPosition
 }
 
 func InitialModel() mainModel {
@@ -97,14 +78,6 @@ func InitialModel() mainModel {
     }
 }
 
-func getKubernetesClient() tea.Msg {
-    clientset := k8s.GetClientSet()
-    return k8sClientMsg{clientset}
-}
-
-type k8sClientMsg struct { clientset *kubernetes.Clientset }
-
-type statusBarUpdateMsg struct {contents [4]string}
 
 func (m mainModel) updateStatus() tea.Msg {
     nodes := k8s.GetNodes(m.clientset)
@@ -114,53 +87,28 @@ func (m mainModel) updateStatus() tea.Msg {
         nodeText = "1 node"
     }
 
-    contents := [...]string{
-        "Connected",
-        "cluster name",
-        nodeText,
-        "UP",
+    return commands.StatusBarUpdateMsg{
+        ConnectionStatus: "Connected",
+        ClusterName: "cluster name",
+        NodeData: nodeText,
+        Status: "UP",
     }
-    return statusBarUpdateMsg{ contents: contents }
 }
 
 func (m mainModel) Init() tea.Cmd {
     mainContentCmd := m.mainContent.Init()
-    return tea.Sequence(getKubernetesClient, mainContentCmd)
+
+    return tea.Sequence(
+        commands.GetKubernetesClientCmd,
+        mainContentCmd,
+        commands.Tick(TICK_INTERVAL),
+    )
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     var cmd tea.Cmd
 
     switch msg := msg.(type) {
-
-    case k8sClientMsg:
-        m.clientset = msg.clientset
-        m.mainContent, cmd = m.mainContent.Update(msg)
-        m.mainContent.SetResource(Resources[m.navigation.resourceIndex])
-
-        return m, tea.Batch(
-            m.updateStatus,
-            m.mainContent.refreshList,
-            cmd,
-        )
-
-    case statusBarUpdateMsg:
-        m.statusBar.SetContent(
-            msg.contents[0],
-            msg.contents[1],
-            msg.contents[2],
-            msg.contents[3],
-        )
-
-    case TickMsg:
-        m.mainContent, cmd = m.mainContent.Update(msg)
-
-        return m, tea.Batch(m.updateStatus, cmd)
-
-    case RefreshRowsMsg, LoadTablesMsg, ResourceDetailsMsg:
-        m.mainContent, cmd = m.mainContent.Update(msg)
-        return m, cmd
-
     case tea.WindowSizeMsg:
         m.width = msg.Width
         m.height = msg.Height
@@ -173,11 +121,13 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         m.navigation.SetSize(navigationWidth, componentHeight)
         m.mainContent.SetSize(mainWidth, componentHeight)
-
         m.statusBar.SetSize(msg.Width)
 
-        m.mainContent, cmd = m.mainContent.Update(msg)
-        m.navigation, cmd = m.navigation.Update(msg)
+        var mainCmd, navigationCmd tea.Cmd
+        m.mainContent, mainCmd = m.mainContent.Update(msg)
+        m.navigation, navigationCmd = m.navigation.Update(msg)
+
+        cmd = tea.Batch(mainCmd, navigationCmd)
 
     case tea.KeyMsg:
         switch msg.String() {
@@ -192,23 +142,66 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         }
 
         if (m.currentPanel == Main) {
+            m.mainContent.SetHighlight(true)
             m.mainContent.Focus()
+            m.navigation.SetHighlight(false)
             m.navigation.Blur()
+
             m.mainContent, cmd = m.mainContent.Update(msg)
+
         } else if (m.currentPanel == Navigation) {
+            m.mainContent.SetHighlight(false)
             m.mainContent.Blur()
+            m.navigation.SetHighlight(true)
             m.navigation.Focus()
 
-            previousResourceIndex := m.navigation.resourceIndex
-            m.navigation, cmd = m.navigation.Update(msg)
+            var navigationCmd, mainCmd tea.Cmd
+            m.navigation, navigationCmd = m.navigation.Update(msg)
+            m.mainContent, mainCmd = m.mainContent.Update(
+                commands.ResourceChangeMsg{
+                    NewResource: core.Resources[m.navigation.resourceIndex],
+                },
+            )
 
-            if previousResourceIndex != m.navigation.resourceIndex {
-                m.mainContent.SetResource(
-                    Resources[m.navigation.resourceIndex],
-                )
-                return m, tea.Sequence(cmd, m.mainContent.refreshList)
-            }
+            cmd = tea.Batch(navigationCmd, mainCmd)
         }
+
+    case commands.K8sClientMsg:
+        m.clientset = msg.Clientset
+
+        var originalMsgCmd, resourceChangeCmd tea.Cmd
+        m.mainContent, originalMsgCmd = m.mainContent.Update(msg)
+        m.mainContent, resourceChangeCmd = m.mainContent.Update(
+            commands.ResourceChangeMsg{
+                NewResource: core.Resources[m.navigation.resourceIndex],
+            },
+        )
+
+        cmd = tea.Batch(
+            m.updateStatus,
+            resourceChangeCmd,
+            originalMsgCmd,
+        )
+
+    case commands.TickMsg:
+        var mainCmd tea.Cmd
+        m.mainContent, mainCmd = m.mainContent.Update(msg)
+        cmd = tea.Batch(
+            m.updateStatus,
+            mainCmd,
+            commands.Tick(TICK_INTERVAL),
+        )
+
+    case commands.StatusBarUpdateMsg:
+        m.statusBar.SetContent(
+            msg.ConnectionStatus,
+            msg.ClusterName,
+            msg.NodeData,
+            msg.Status,
+        )
+
+    default:
+        m.mainContent, cmd = m.mainContent.Update(msg)
 
     }
 
@@ -216,14 +209,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) View() string {
-    if (m.currentPanel == Main) {
-        m.mainContent.SetHighlight(true)
-        m.navigation.SetHighlight(false)
-    } else if (m.currentPanel == Navigation) {
-        m.mainContent.SetHighlight(false)
-        m.navigation.SetHighlight(true)
-    }
-
     return lipgloss.JoinVertical(
         lipgloss.Top,
         lipgloss.JoinHorizontal(

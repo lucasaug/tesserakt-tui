@@ -1,7 +1,6 @@
 package models
 
 import (
-	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -9,32 +8,24 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/lucasaug/tesserakt-tui/src/adapters"
+	"github.com/lucasaug/tesserakt-tui/src/commands"
+	"github.com/lucasaug/tesserakt-tui/src/core"
 )
-
-type resourceSelector struct {
-    name string
-    namespace string
-    resourceType Resource
-    editable bool
-    data string
-}
 
 type resourceView struct {
     clientset *kubernetes.Clientset
-    itemIndex int
-
-    style lipgloss.Style
-    highlightedStyle lipgloss.Style
 
     width int
     height int
 
-    resourceType Resource
-    resourceTables map[Resource]*table.Model
+    style lipgloss.Style
+    highlightedStyle lipgloss.Style
+    resourceTables map[core.Resource]*table.Model
     contentViewport *viewport.Model
 
-    selectedResource *resourceSelector
+    resourceType core.Resource
+    selectedResource *core.ResourceSelector
+    itemIndex int
     highlighted bool
 }
 
@@ -55,131 +46,50 @@ func InitialResourceViewModel() resourceView {
     }
 }
 
-func (r *resourceView) SetResource(res Resource) {
-    r.resourceType = res
-}
-
-const TICK_INTERVAL = time.Millisecond * 500
-
-type TickMsg time.Time
-
-func tick() tea.Cmd {
-    return tea.Tick(TICK_INTERVAL, func(t time.Time) tea.Msg {
-        return TickMsg(t)
-    })
-}
-
-type RefreshRowsMsg struct {
-    rows []table.Row
-    resource Resource
-}
-type EmptyMsg struct {}
-
-func (r resourceView) refreshList() tea.Msg {
-    if (r.clientset == nil) { return EmptyMsg{} }
-
-    if r.resourceType == Pod {
-        return RefreshRowsMsg{
-            rows: adapters.GetPodRows(r.clientset),
-            resource: r.resourceType,
-        }
-    } else if r.resourceType == Deployment {
-        return RefreshRowsMsg{
-            rows: adapters.GetDeploymentRows(r.clientset),
-            resource: r.resourceType,
-        }
-    } else if r.resourceType == Ingress {
-        return RefreshRowsMsg{
-            rows: adapters.GetIngressRows(r.clientset),
-            resource: r.resourceType,
-        }
-    }
-
-    return RefreshRowsMsg{
-        rows: []table.Row{},
-        resource: r.resourceType,
-    }
-}
-
-type ResourceDetailsMsg struct { value resourceSelector }
-
-func createResourceDetails(
-    clientset kubernetes.Clientset,
-    resourceType Resource,
-    name, namespace string,
-) tea.Cmd {
-    return func() tea.Msg {
-        var data string
-        if (resourceType == Pod) {
-            data = adapters.GetPodJson(&clientset, name, namespace)
-        } else if (resourceType == Deployment) {
-            data = adapters.GetDeploymentJson(&clientset, name, namespace)
-        } else if (resourceType == Ingress) {
-            data = adapters.GetIngressJson(&clientset, name, namespace)
-        }
-
-        return ResourceDetailsMsg{
-            value: resourceSelector{
-                name: name,
-                namespace: namespace,
-                resourceType: resourceType,
-                editable: false,
-                data: data,
-            },
-        }
-    }
-}
-
-type LoadTablesMsg struct { tables map[Resource]*table.Model }
-func createLoadTables(clientset *kubernetes.Clientset) tea.Cmd {
-    return func() tea.Msg {
-        podTable := adapters.GetPodTable(clientset)
-        deploymentTable := adapters.GetDeploymentTable(clientset)
-        ingressTable := adapters.GetIngressTable(clientset)
-
-        tables := map[Resource]*table.Model {
-            Pod: &podTable,
-            Deployment: &deploymentTable,
-            Ingress: &ingressTable,
-        }
-
-        return LoadTablesMsg{tables: tables}
-    }
-}
-
 func (r resourceView) Init() tea.Cmd {
-    return tick()
+    return nil
 }
 
 func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
     var cmd tea.Cmd
 
     switch msg := msg.(type) {
-    case k8sClientMsg:
-        r.clientset = msg.clientset
-        return r, createLoadTables(r.clientset)
+    case commands.K8sClientMsg:
+        r.clientset = msg.Clientset
+        cmd = commands.CreateLoadTables(r.clientset)
 
-    case TickMsg:
-        return r, tea.Batch(r.refreshList, tick())
+    case commands.TickMsg:
+        cmd = commands.RefreshResourceList(r.clientset, &r.resourceType)
 
-    case LoadTablesMsg:
-        r.resourceTables = msg.tables
+    case commands.ResourceChangeMsg:
+        r.resourceType = msg.NewResource
+        cmd = commands.RefreshResourceList(r.clientset, &r.resourceType)
 
-    case RefreshRowsMsg:
+    case commands.LoadTablesMsg:
+        r.resourceTables = msg.Tables
+
+    case commands.RefreshResourceListMsg:
         if (len(r.resourceTables) != 0) {
-            r.resourceTables[msg.resource].SetRows(msg.rows)
+            r.resourceTables[msg.Resource].SetRows(msg.Rows)
         }
 
-    case ResourceDetailsMsg:
-        r.selectedResource = &msg.value
+    case commands.ResourceDetailsMsg:
+        r.selectedResource = &msg.Value
 
     case tea.KeyMsg:
         switch msg.String() {
 
         case "enter":
-            name := r.resourceTables[r.resourceType].Rows()[r.itemIndex][0]
-            namespace := r.resourceTables[r.resourceType].Rows()[r.itemIndex][1]
-            return r, createResourceDetails(*r.clientset, r.resourceType, name, namespace)
+            name := r.resourceTables[r.resourceType].
+                Rows()[r.itemIndex][0]
+            namespace := r.resourceTables[r.resourceType].
+                Rows()[r.itemIndex][1]
+            return r, commands.ResourceDetails(
+                *r.clientset,
+                r.resourceType,
+                name,
+                namespace,
+            )
 
         case "k", "up":
             if (r.itemIndex > 0 && r.selectedResource == nil) {
@@ -187,8 +97,8 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
             }
 
         case "j", "down":
-            if (r.itemIndex < len(r.resourceTables[r.resourceType].Rows()) - 1 &&
-                r.selectedResource == nil) {
+            nrows := len(r.resourceTables[r.resourceType].Rows())
+            if (r.itemIndex < nrows - 1 && r.selectedResource == nil) {
                 r.itemIndex++
             }
 
@@ -199,19 +109,25 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
     }
 
     if (r.selectedResource != nil) {
-        *r.contentViewport, cmd = r.contentViewport.Update(msg)
+        var cvCmd tea.Cmd
+        *r.contentViewport, cvCmd = r.contentViewport.Update(msg)
+        cmd = tea.Batch(cvCmd, cmd)
     } else if (len(r.resourceTables) != 0) {
-        *r.resourceTables[r.resourceType], cmd = r.resourceTables[r.resourceType].Update(msg)
+        var tableCmd tea.Cmd
+        *r.resourceTables[r.resourceType], tableCmd =
+            r.resourceTables[r.resourceType].Update(msg)
+        cmd = tea.Batch(tableCmd, cmd)
     }
 
     return r, cmd
 }
 
 func (r resourceView) View() string {
-    if (r.selectedResource != nil) {
+    if (r.selectedResource != nil &&
+        r.selectedResource.ResourceType == r.resourceType) {
         r.contentViewport.Width = r.width
         r.contentViewport.Height = r.height
-        r.contentViewport.SetContent(r.selectedResource.data)
+        r.contentViewport.SetContent(r.selectedResource.Data)
         if (r.highlighted) {
             return r.highlightedStyle.Render(
                 r.contentViewport.View(),
@@ -219,6 +135,7 @@ func (r resourceView) View() string {
         }
         return r.style.Render(r.contentViewport.View())
     }
+
     if (len(r.resourceTables) == 0) { return "" }
 
     r.resourceTables[r.resourceType].SetWidth(r.width)

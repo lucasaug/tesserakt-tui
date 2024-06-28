@@ -1,43 +1,29 @@
 package models
 
 import (
-        "github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasaug/tesserakt-tui/src/core"
 )
-
-type Resource string
-
-const (
-    Pod        Resource = "Pod"
-    Deployment Resource = "Deployment"
-    Ingress    Resource = "Ingress"
-)
-
-var Resources = [...]Resource{
-    Pod,
-    Deployment,
-    Ingress,
-}
 
 type resourcePicker struct {
-    resourceIndex int
-
-    table            table.Model
-    style            lipgloss.Style
-    highlightedStyle lipgloss.Style
-
     width int
     height int
 
+    style            lipgloss.Style
+    highlightedStyle lipgloss.Style
+    table            table.Model
+
+    resourceIndex int
     highlighted bool
 }
 
 func InitialResourcePickerModel() resourcePicker {
     resourceItems := []table.Row {
-        []string{ string(Pod) },
-        []string{ string(Deployment) },
-        []string{ string(Ingress) },
+        []string{ string(core.Pod) },
+        []string{ string(core.Deployment) },
+        []string{ string(core.Ingress) },
     }
     resourceHeader := []table.Column {
         { Title: "Resources", Width: 10 },
@@ -80,7 +66,7 @@ func (r resourcePicker) Update(msg tea.Msg) (resourcePicker, tea.Cmd) {
             }
 
         case "j", "down":
-            if (r.resourceIndex < len(Resources) - 1) {
+            if (r.resourceIndex < len(core.Resources) - 1) {
                 r.resourceIndex++
             }
 
