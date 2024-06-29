@@ -42,6 +42,7 @@ func InitialResourceViewModel() resourceView {
         style: viewStyle,
         highlightedStyle: highlightedStyle,
         contentViewport: &cv,
+        selectedResource: make(map[core.Resource]*core.ResourceSelector),
     }
 }
 
@@ -79,7 +80,7 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
         }
 
     case commands.ResourceDetailsMsg:
-        r.selectedResource = &msg.Value
+        r.selectedResource[r.resourceType] = &msg.Value
 
     case tea.KeyMsg:
         switch msg.String() {
@@ -98,23 +99,25 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
             )
 
         case "k", "up":
-            if (r.itemIndex > 0 && r.selectedResource == nil) {
+            if (r.itemIndex > 0 &&
+                r.selectedResource[r.resourceType] == nil) {
                 r.itemIndex--
             }
 
         case "j", "down":
             nrows := len(r.resourceTables[r.resourceType].Rows())
-            if (r.itemIndex < nrows - 1 && r.selectedResource == nil) {
+            if (r.itemIndex < nrows - 1 &&
+                r.selectedResource[r.resourceType] == nil) {
                 r.itemIndex++
             }
 
         case "esc":
-            r.selectedResource = nil
+            r.selectedResource[r.resourceType] = nil
 
         }
     }
 
-    if (r.selectedResource != nil) {
+    if (r.selectedResource[r.resourceType] != nil) {
         var cvCmd tea.Cmd
         *r.contentViewport, cvCmd = r.contentViewport.Update(msg)
         cmd = tea.Batch(cvCmd, cmd)
@@ -129,12 +132,10 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
 }
 
 func (r resourceView) View() string {
-    if (r.selectedResource != nil &&
-        r.selectedResource.ResourceType == r.resourceType) {
-
+    if (r.selectedResource[r.resourceType] != nil) {
         r.contentViewport.Width = r.width
         r.contentViewport.Height = r.height
-        r.contentViewport.SetContent(r.selectedResource.Data)
+        r.contentViewport.SetContent(r.selectedResource[r.resourceType].Data)
 
         if (r.highlighted) {
             return r.highlightedStyle.Render(

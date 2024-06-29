@@ -139,6 +139,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         case "l", "right":
             m.currentPanel = nextPanel[m.currentPanel][right]
+
         }
 
         if (m.currentPanel == Main) {
@@ -157,11 +158,16 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
             var navigationCmd, mainCmd tea.Cmd
             m.navigation, navigationCmd = m.navigation.Update(msg)
-            m.mainContent, mainCmd = m.mainContent.Update(
-                commands.ResourceChangeMsg{
-                    NewResource: core.Resources[m.navigation.resourceIndex],
-                },
-            )
+
+            if (msg.String() == "esc") {
+                m.mainContent, mainCmd = m.mainContent.Update(msg)
+            } else {
+                m.mainContent, mainCmd = m.mainContent.Update(
+                    commands.ResourceChangeMsg{
+                        NewResource: core.Resources[m.navigation.resourceIndex],
+                    },
+                )
+            }
 
             cmd = tea.Batch(navigationCmd, mainCmd)
         }

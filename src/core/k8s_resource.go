@@ -17,7 +17,6 @@ var Resources = [...]Resource{
 type ResourceSelector struct {
     Name string
     Namespace string
-    ResourceType Resource
     Editable bool
     Data string
 }

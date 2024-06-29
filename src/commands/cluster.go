@@ -36,7 +36,6 @@ func ResourceDetails(
             Value: core.ResourceSelector{
                 Name: name,
                 Namespace: namespace,
-                ResourceType: resourceType,
                 Editable: false,
                 Data: data,
             },
