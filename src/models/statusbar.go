@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/charmbracelet/lipgloss"
-	"github.com/mistakenelf/teacup/statusbar"
+    "github.com/charmbracelet/lipgloss"
+    "github.com/mistakenelf/teacup/statusbar"
 )
 
 func createStatusBar() statusbar.Model {

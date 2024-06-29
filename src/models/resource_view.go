@@ -1,15 +1,14 @@
 package models
 
 import (
+    "github.com/charmbracelet/bubbles/table"
+    "github.com/charmbracelet/bubbles/viewport"
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/charmbracelet/lipgloss"
+    "k8s.io/client-go/kubernetes"
 
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/lucasaug/tesserakt-tui/src/commands"
-	"github.com/lucasaug/tesserakt-tui/src/core"
+    "github.com/lucasaug/tesserakt-tui/src/commands"
+    "github.com/lucasaug/tesserakt-tui/src/core"
 )
 
 type resourceView struct {
@@ -24,7 +23,7 @@ type resourceView struct {
     contentViewport *viewport.Model
 
     resourceType core.Resource
-    selectedResource *core.ResourceSelector
+    selectedResource map[core.Resource]*core.ResourceSelector
     itemIndex int
     highlighted bool
 }
@@ -62,8 +61,14 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
         cmd = commands.RefreshResourceList(r.clientset, &r.resourceType)
 
     case commands.ResourceChangeMsg:
-        r.resourceType = msg.NewResource
-        cmd = commands.RefreshResourceList(r.clientset, &r.resourceType)
+        if (r.resourceType != msg.NewResource) {
+            r.resourceType = msg.NewResource
+            r.itemIndex = 0
+            if (r.resourceTables[r.resourceType] != nil) {
+                r.resourceTables[r.resourceType].SetCursor(0)
+            }
+            cmd = commands.RefreshResourceList(r.clientset, &r.resourceType)
+        }
 
     case commands.LoadTablesMsg:
         r.resourceTables = msg.Tables
@@ -84,6 +89,7 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
                 Rows()[r.itemIndex][0]
             namespace := r.resourceTables[r.resourceType].
                 Rows()[r.itemIndex][1]
+
             return r, commands.ResourceDetails(
                 *r.clientset,
                 r.resourceType,
@@ -125,9 +131,11 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
 func (r resourceView) View() string {
     if (r.selectedResource != nil &&
         r.selectedResource.ResourceType == r.resourceType) {
+
         r.contentViewport.Width = r.width
         r.contentViewport.Height = r.height
         r.contentViewport.SetContent(r.selectedResource.Data)
+
         if (r.highlighted) {
             return r.highlightedStyle.Render(
                 r.contentViewport.View(),

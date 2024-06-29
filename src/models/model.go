@@ -1,17 +1,17 @@
 package models
 
 import (
-	"fmt"
-	"time"
+    "fmt"
+    "time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/mistakenelf/teacup/statusbar"
-	"k8s.io/client-go/kubernetes"
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/charmbracelet/lipgloss"
+    "github.com/mistakenelf/teacup/statusbar"
+    "k8s.io/client-go/kubernetes"
 
-	"github.com/lucasaug/tesserakt-tui/src/core"
-	"github.com/lucasaug/tesserakt-tui/src/commands"
-	"github.com/lucasaug/tesserakt-tui/src/k8s"
+    "github.com/lucasaug/tesserakt-tui/src/core"
+    "github.com/lucasaug/tesserakt-tui/src/commands"
+    "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 const TICK_INTERVAL = time.Millisecond * 500
