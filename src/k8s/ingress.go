@@ -1,43 +1,42 @@
 package k8s
 
 import (
-	"context"
-	"fmt"
-	"os"
+    "context"
 
-	v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+    v1 "k8s.io/api/networking/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/client-go/kubernetes"
 )
 
+type IngressResource v1.Ingress
 
-func GetIngresses(clientset *kubernetes.Clientset) []v1.Ingress {
-    pods, err := clientset.
+func (ir IngressResource) Values() []string {
+    return []string{
+        ir.Name,
+        ir.Namespace,
+    }
+}
+
+type IngressHandler struct {}
+
+func (IngressHandler) List(
+    clientset *kubernetes.Clientset,
+    namespace string,
+) ([]ResourceInstance, error) {
+    ingresses, err := clientset.
         NetworkingV1().
-        Ingresses("").
+        Ingresses(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
-        fmt.Printf("error getting ingress: %v\n", err)
-        os.Exit(1)
+        return []ResourceInstance{}, err
     }
 
-    return pods.Items
-}
-
-func GetIngress(
-    clientset *kubernetes.Clientset,
-    name, namespace string,
-) *v1.Ingress {
-    ingress, err := clientset.
-        NetworkingV1().
-        Ingresses(namespace).
-	Get(context.Background(), name, metav1.GetOptions{})
-
-    if err != nil {
-        fmt.Printf("error getting ingress: %v\n", err)
-        os.Exit(1)
+    result := []ResourceInstance{}
+    for _, item := range ingresses.Items {
+        result = append(result, IngressResource(item))
     }
 
-    return ingress
+    return result, nil
 }
+

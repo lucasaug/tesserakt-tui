@@ -1,44 +1,42 @@
 package k8s
 
 import (
-	"context"
-	"fmt"
-	"os"
+    "context"
 
-	"k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+    "k8s.io/api/apps/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/client-go/kubernetes"
 )
 
+type DeploymentResource v1.Deployment
 
-func GetDeployments(clientset *kubernetes.Clientset) []v1.Deployment {
+func (dr DeploymentResource) Values() []string {
+    return []string{
+        dr.Name,
+        dr.Namespace,
+    }
+}
+
+type DeploymentHandler struct {}
+
+func (DeploymentHandler) List(
+    clientset *kubernetes.Clientset,
+    namespace string,
+) ([]ResourceInstance, error) {
     deployments, err := clientset.
         AppsV1().
-        Deployments("").
+        Deployments(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
-        fmt.Printf("error getting deployments: %v\n", err)
-        os.Exit(1)
+        return []ResourceInstance{}, err
     }
 
-    return deployments.Items
-}
-
-func GetDeployment(
-    clientset *kubernetes.Clientset,
-    name, namespace string,
-) *v1.Deployment {
-    deployment, err := clientset.
-        AppsV1().
-        Deployments(namespace).
-	Get(context.Background(), name, metav1.GetOptions{})
-
-    if err != nil {
-        fmt.Printf("error getting deployment: %v\n", err)
-        os.Exit(1)
+    result := []ResourceInstance{}
+    for _, item := range deployments.Items {
+        result = append(result, DeploymentResource(item))
     }
 
-    return deployment
+    return result, nil
 }
 

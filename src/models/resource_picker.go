@@ -4,7 +4,7 @@ import (
     "github.com/charmbracelet/bubbles/table"
     tea "github.com/charmbracelet/bubbletea"
     "github.com/charmbracelet/lipgloss"
-    "github.com/lucasaug/tesserakt-tui/src/core"
+    "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 type resourcePicker struct {
@@ -21,9 +21,9 @@ type resourcePicker struct {
 
 func InitialResourcePickerModel() resourcePicker {
     resourceItems := []table.Row {
-        []string{ string(core.Pod) },
-        []string{ string(core.Deployment) },
-        []string{ string(core.Ingress) },
+        []string{ string(k8s.Pod) },
+        []string{ string(k8s.Deployment) },
+        []string{ string(k8s.Ingress) },
     }
     resourceHeader := []table.Column {
         { Title: "Resources", Width: 10 },
@@ -66,7 +66,7 @@ func (r resourcePicker) Update(msg tea.Msg) (resourcePicker, tea.Cmd) {
             }
 
         case "j", "down":
-            if (r.resourceIndex < len(core.Resources) - 1) {
+            if (r.resourceIndex < len(k8s.Resources) - 1) {
                 r.resourceIndex++
             }
 

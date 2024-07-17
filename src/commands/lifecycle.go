@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"time"
+    "time"
 
-	tea "github.com/charmbracelet/bubbletea"
+    tea "github.com/charmbracelet/bubbletea"
 )
 
 type StatusBarUpdateMsg struct {

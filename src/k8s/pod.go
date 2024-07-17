@@ -1,44 +1,45 @@
 package k8s
 
 import (
-	"context"
-	"fmt"
-	"os"
+    "context"
+    "fmt"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+    "k8s.io/api/core/v1"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/client-go/kubernetes"
 )
 
+type PodResource v1.Pod
 
-func GetPods(clientset *kubernetes.Clientset) []v1.Pod {
+func (pr PodResource) Values() []string {
+    return []string{
+        pr.Name,
+        pr.Namespace,
+        fmt.Sprint(len(pr.Spec.Containers)),
+        string(pr.Status.Phase),
+    }
+}
+
+type PodHandler struct {}
+
+func (PodHandler) List(
+    clientset *kubernetes.Clientset,
+    namespace string,
+) ([]ResourceInstance, error) {
     pods, err := clientset.
         CoreV1().
-        Pods("").
+        Pods(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
-        fmt.Printf("error getting pods: %v\n", err)
-        os.Exit(1)
+        return []ResourceInstance{}, err
     }
 
-    return pods.Items
-}
-
-func GetPod(
-    clientset *kubernetes.Clientset,
-    name, namespace string,
-) *v1.Pod {
-    pod, err := clientset.
-        CoreV1().
-        Pods(namespace).
-	Get(context.Background(), name, metav1.GetOptions{})
-
-    if err != nil {
-        fmt.Printf("error getting pod: %v\n", err)
-        os.Exit(1)
+    result := []ResourceInstance{}
+    for _, item := range pods.Items {
+        result = append(result, PodResource(item))
     }
 
-    return pod
+    return result, nil
 }
 

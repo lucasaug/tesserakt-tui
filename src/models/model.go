@@ -9,7 +9,6 @@ import (
     "github.com/mistakenelf/teacup/statusbar"
     "k8s.io/client-go/kubernetes"
 
-    "github.com/lucasaug/tesserakt-tui/src/core"
     "github.com/lucasaug/tesserakt-tui/src/commands"
     "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
@@ -80,7 +79,9 @@ func InitialModel() mainModel {
 
 
 func (m mainModel) updateStatus() tea.Msg {
-    nodes := k8s.GetNodes(m.clientset)
+    nodeHandler := k8s.NodeHandler{}
+    // TODO handle error
+    nodes, _ := nodeHandler.List(m.clientset)
 
     nodeText := fmt.Sprint(len(nodes), " nodes")
     if len(nodes) == 1 {
@@ -164,7 +165,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             } else {
                 m.mainContent, mainCmd = m.mainContent.Update(
                     commands.ResourceChangeMsg{
-                        NewResource: core.Resources[m.navigation.resourceIndex],
+                        NewResource: k8s.Resources[m.navigation.resourceIndex],
                     },
                 )
             }
@@ -179,7 +180,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         m.mainContent, originalMsgCmd = m.mainContent.Update(msg)
         m.mainContent, resourceChangeCmd = m.mainContent.Update(
             commands.ResourceChangeMsg{
-                NewResource: core.Resources[m.navigation.resourceIndex],
+                NewResource: k8s.Resources[m.navigation.resourceIndex],
             },
         )
 
