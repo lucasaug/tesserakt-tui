@@ -1,15 +1,18 @@
 package models
 
 import (
-    "github.com/charmbracelet/bubbles/table"
-    "github.com/charmbracelet/bubbles/viewport"
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
-    "k8s.io/client-go/kubernetes"
+	"bytes"
 
-    "github.com/lucasaug/tesserakt-tui/src/commands"
-    "github.com/lucasaug/tesserakt-tui/src/controllers"
-    "github.com/lucasaug/tesserakt-tui/src/k8s"
+	"github.com/alecthomas/chroma/quick"
+	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/lucasaug/tesserakt-tui/src/commands"
+	"github.com/lucasaug/tesserakt-tui/src/controllers"
+	"github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 const DEFAULT_RESOURCE = k8s.Pod
@@ -144,7 +147,11 @@ func (r resourceView) View() string {
     if (r.selectedResource[r.resourceType] != nil) {
         r.contentViewport.Width = r.width
         r.contentViewport.Height = r.height
-        r.contentViewport.SetContent(r.selectedResource[r.resourceType].Data)
+        data := r.selectedResource[r.resourceType].Data
+        var b bytes.Buffer
+        quick.Highlight(&b, data, "json", "terminal", "catpuccin-mocha")
+        highlightedYAML := b.String()
+        r.contentViewport.SetContent(highlightedYAML)
 
         if (r.highlighted) {
             return r.highlightedStyle.Render(

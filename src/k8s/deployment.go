@@ -17,6 +17,14 @@ func (dr DeploymentResource) Values() []string {
     }
 }
 
+func (dr DeploymentResource) ResourceName() string {
+    return dr.Name
+}
+
+func (dr DeploymentResource) ResourceNamespace() string {
+    return dr.Namespace
+}
+
 type DeploymentHandler struct {}
 
 func (DeploymentHandler) List(

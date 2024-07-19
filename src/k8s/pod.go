@@ -20,9 +20,19 @@ func (pr PodResource) Values() []string {
     }
 }
 
-type PodHandler struct {}
+func (pr PodResource) ResourceName() string {
+    return pr.Name
+}
 
-func (PodHandler) List(
+func (pr PodResource) ResourceNamespace() string {
+    return pr.Namespace
+}
+
+type PodHandler struct {
+    list []PodResource
+}
+
+func (ph PodHandler) List(
     clientset *kubernetes.Clientset,
     namespace string,
 ) ([]ResourceInstance, error) {
@@ -36,8 +46,10 @@ func (PodHandler) List(
     }
 
     result := []ResourceInstance{}
+    ph.list = []PodResource{}
     for _, item := range pods.Items {
         result = append(result, PodResource(item))
+        ph.list = append(ph.list, PodResource(item))
     }
 
     return result, nil

@@ -1,11 +1,11 @@
 package k8s
 
 import (
-    "context"
+	"context"
 
-    v1 "k8s.io/api/networking/v1"
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/client-go/kubernetes"
+	v1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type IngressResource v1.Ingress
@@ -17,7 +17,17 @@ func (ir IngressResource) Values() []string {
     }
 }
 
-type IngressHandler struct {}
+type IngressHandler struct {
+    list []IngressResource
+}
+
+func (ir IngressResource) ResourceName() string {
+    return ir.Name
+}
+
+func (ir IngressResource) ResourceNamespace() string {
+    return ir.Namespace
+}
 
 func (IngressHandler) List(
     clientset *kubernetes.Clientset,

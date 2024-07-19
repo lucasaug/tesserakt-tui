@@ -30,3 +30,30 @@ func RefreshResourceList(
     }
 }
 
+type ResourceDetailsMsg struct { Value k8s.ResourceSelector }
+
+func ResourceDetails(
+    clientset kubernetes.Clientset,
+    resourceType k8s.ResourceType,
+    name, namespace string,
+) tea.Cmd {
+    return func() tea.Msg {
+	// TODO handle err
+	data, _ := controllers.Get(
+	    &clientset,
+	    resourceType,
+	    name,
+	    namespace,
+	)
+
+        return ResourceDetailsMsg{
+            Value: k8s.ResourceSelector{
+                Name: name,
+                Namespace: namespace,
+                Editable: false,
+                Data: string(data),
+            },
+        }
+    }
+}
+

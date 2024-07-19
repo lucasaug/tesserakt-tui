@@ -1,10 +1,12 @@
 package controllers
 
 import (
-    "github.com/charmbracelet/bubbles/table"
-    "k8s.io/client-go/kubernetes"
+	"encoding/json"
 
-    "github.com/lucasaug/tesserakt-tui/src/k8s"
+	"github.com/charmbracelet/bubbles/table"
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 var resourceHandlers = map[k8s.ResourceType]k8s.ResourceHandler {
@@ -28,6 +30,29 @@ var ResourceToColumns = map[k8s.ResourceType][]table.Column {
         { Title: "Name", Width: 40 },
         { Title: "Namespace", Width: 20 },
     },
+}
+
+func Get(
+    clientset *kubernetes.Clientset,
+    resourceType k8s.ResourceType,
+    name, namespace string,
+) (string, error) {
+
+    handler:= resourceHandlers[resourceType]
+
+    resource := k8s.GetResource(
+        clientset,
+        handler,
+        name,
+        namespace,
+    )
+
+    data, err := json.MarshalIndent(resource, "", "    ")
+    if err != nil {
+        return "", err
+    }
+
+    return string(data), nil
 }
 
 func GetRows(
