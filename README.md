@@ -2,6 +2,9 @@
 <!-- [![Stargazers][stars-shield]][stars-url] -->
 <!-- [![Issues][issues-shield]][issues-url] -->
 [![GPL][license-shield]][license-url]
+![last-activity](https://img.shields.io/github/last-commit/lucasaug/tesserakt-tui)
+![go](https://github.com/lucasaug/tesserakt-tui/actions/workflows/go.yml/badge.svg)
+![repo-size](https://img.shields.io/github/repo-size/lucasaug/tesserakt-tui)
 
 
 <!-- PROJECT LOGO -->
@@ -102,7 +105,7 @@ Distributed under the GPL 3.0 License. See `LICENSE` for more information.
 [stars-url]: https://github.com/lucasaug/tesserakt-tui/stargazers
 [issues-shield]: https://img.shields.io/github/issues/lucasaug/tesserakt-tui.svg?style=for-the-badge
 [issues-url]: https://github.com/lucasaug/tesserakt-tui/issues
-[license-shield]: https://img.shields.io/github/license/lucasaug/tesserakt-tui.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/lucasaug/tesserakt-tui.svg
 [license-url]: https://github.com/lucasaug/tesserakt-tui/blob/master/LICENSE.txt
 [tesserakt-tui-screenshot]: images/screenshot.png
 
