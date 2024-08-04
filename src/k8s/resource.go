@@ -74,3 +74,4 @@ func GetResource(
 
     return list[idx]
 }
+
