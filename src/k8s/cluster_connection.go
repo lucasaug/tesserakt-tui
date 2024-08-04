@@ -9,13 +9,26 @@ import (
     "k8s.io/client-go/tools/clientcmd"
 )
 
-func GetClientSet() *kubernetes.Clientset {
+func GetConfigPath() string {
     userHomeDir, err := os.UserHomeDir()
     if err != nil {
         fmt.Printf("error getting user home dir: %v\n", err)
         os.Exit(1)
     }
-    kubeConfigPath := filepath.Join(userHomeDir, ".kube", "config")
+    return filepath.Join(userHomeDir, ".kube", "config")
+}
+
+func GetClusterName() string {
+    kubeConfigPath := GetConfigPath()
+    if conf := clientcmd.GetConfigFromFileOrDie(kubeConfigPath); conf != nil{
+        return conf.CurrentContext
+    }
+
+    return ""
+}
+
+func GetClientSet() *kubernetes.Clientset {
+    kubeConfigPath := GetConfigPath()
 
     kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
     if err != nil {

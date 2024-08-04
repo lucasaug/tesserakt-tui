@@ -7,9 +7,13 @@ import (
 )
 
 type K8sClientMsg struct { Clientset *kubernetes.Clientset }
+type K8sClusterNameMsg struct { Name string }
 
 func GetKubernetesClientCmd() tea.Msg {
-    clientset := k8s.GetClientSet()
-    return K8sClientMsg{clientset}
+    return K8sClientMsg{k8s.GetClientSet()}
+}
+
+func GetClusterNameCmd() tea.Msg {
+    return K8sClusterNameMsg{k8s.GetClusterName()}
 }
 

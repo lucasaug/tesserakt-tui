@@ -50,6 +50,7 @@ var nextPanel map[panelPosition](map[direction]panelPosition) =
 
 type mainModel struct {
     clientset *kubernetes.Clientset
+    clusterName string
 
     width           int
     height          int
@@ -66,13 +67,14 @@ func InitialModel() mainModel {
     mainContent := InitialResourceViewModel()
     navigation := InitialResourcePickerModel()
 
-    mainContent.SetHighlight(true)
-    navigation.SetHighlight(false)
+    mainContent.SetHighlight(false)
+    navigation.SetHighlight(true)
 
     return mainModel{
         mainContent: mainContent,
         navigation: navigation,
         currentPanel: Navigation,
+        clusterName: "",
         statusBar: createStatusBar(),
     }
 }
@@ -90,9 +92,9 @@ func (m mainModel) updateStatus() tea.Msg {
 
     return commands.StatusBarUpdateMsg{
         ConnectionStatus: "Connected",
-        ClusterName: "cluster name",
+        ClusterName: m.clusterName,
         NodeData: nodeText,
-        Status: "UP",
+        Status: "",
     }
 }
 
@@ -101,6 +103,7 @@ func (m mainModel) Init() tea.Cmd {
 
     return tea.Sequence(
         commands.GetKubernetesClientCmd,
+        commands.GetClusterNameCmd,
         mainContentCmd,
         commands.Tick(TICK_INTERVAL),
     )
@@ -189,6 +192,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             resourceChangeCmd,
             originalMsgCmd,
         )
+
+    case commands.K8sClusterNameMsg:
+        m.clusterName = msg.Name
+        cmd = m.updateStatus
 
     case commands.TickMsg:
         var mainCmd tea.Cmd
