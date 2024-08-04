@@ -40,6 +40,7 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
         <li><a href="#usage">Usage</a></li>
       </ul>
     </li>
@@ -65,13 +66,14 @@ It is intended to be robust, fast and stylish.
 You need the Go compiler to build this repository.
 This software was tested on version 1.22.5.
 
-### Usage
+### Installation
 
 1. Clone the repo
-2. Run `go build`
-3. Run `./tesserakt-tui`
+2. Run `go install` to install Tesserakt-TUI to your `GOBIN` path, or run `go build` to build it into the local directory.
 
-Navigation is done using `hjkl` or the arrow keys. Pressing `Enter` when selecting a resource opens up it's JSON description.
+### Usage
+
+Run `tesserakt-tui`. Navigation is done using `hjkl` or the arrow keys. Pressing `Enter` when selecting a resource opens up it's JSON description.
 
 <!-- ROADMAP -->
 ## Roadmap
