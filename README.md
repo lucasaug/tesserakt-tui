@@ -3,7 +3,7 @@
 <!-- [![Issues][issues-shield]][issues-url] -->
 [![GPL][license-shield]][license-url]
 ![last-activity](https://img.shields.io/github/last-commit/lucasaug/tesserakt-tui)
-![go](https://github.com/lucasaug/tesserakt-tui/actions/workflows/go.yml/badge.svg)
+![tests](https://github.com/lucasaug/tesserakt-tui/actions/workflows/go.yml/badge.svg)
 ![repo-size](https://img.shields.io/github/repo-size/lucasaug/tesserakt-tui)
 
 
