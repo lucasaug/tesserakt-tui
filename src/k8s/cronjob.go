@@ -2,44 +2,41 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
-	"k8s.io/api/core/v1"
+	"k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-type PodResource v1.Pod
+type CronJobResource v1.CronJob
 
-func (pr PodResource) Values() []string {
+func (pr CronJobResource) Values() []string {
     return []string{
         pr.Name,
         pr.Namespace,
-        fmt.Sprint(len(pr.Spec.Containers)),
-        string(pr.Status.Phase),
     }
 }
 
-func (pr PodResource) ResourceName() string {
+func (pr CronJobResource) ResourceName() string {
     return pr.Name
 }
 
-func (pr PodResource) ResourceNamespace() string {
+func (pr CronJobResource) ResourceNamespace() string {
     return pr.Namespace
 }
 
-type PodHandler struct {
-    list []PodResource
+type CronJobHandler struct {
+    list []CronJobResource
 }
 
-func (ph PodHandler) List(
+func (ph CronJobHandler) List(
     clientset *kubernetes.Clientset,
     namespace string,
 ) ([]ResourceInstance, error) {
     pods, err := clientset.
-        CoreV1().
-        Pods(namespace).
+        BatchV1().
+        CronJobs(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
@@ -47,21 +44,19 @@ func (ph PodHandler) List(
     }
 
     result := []ResourceInstance{}
-    ph.list = []PodResource{}
+    ph.list = []CronJobResource{}
     for _, item := range pods.Items {
-        result = append(result, PodResource(item))
-        ph.list = append(ph.list, PodResource(item))
+        result = append(result, CronJobResource(item))
+        ph.list = append(ph.list, CronJobResource(item))
     }
 
     return result, nil
 }
 
-func (_ PodHandler) Columns() []table.Column {
+func (_ CronJobHandler) Columns() []table.Column {
     return []table.Column{
         { Title: "Name", Width: 40 },
         { Title: "Namespace", Width: 15 },
-        { Title: "Container count", Width: 15 },
-        { Title: "Phase", Width: 20 },
     }
 }
 

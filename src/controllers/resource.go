@@ -11,25 +11,17 @@ import (
 
 var resourceHandlers = map[k8s.ResourceType]k8s.ResourceHandler {
     k8s.Pod: k8s.PodHandler{},
+    k8s.ReplicaSet: k8s.ReplicaSetHandler{},
+    k8s.StatefulSet: k8s.StatefulSetHandler{},
+    k8s.DaemonSet: k8s.DaemonSetHandler{},
+    k8s.Job: k8s.JobHandler{},
+    k8s.CronJob: k8s.CronJobHandler{},
     k8s.Deployment: k8s.DeploymentHandler{},
     k8s.Ingress: k8s.IngressHandler{},
 }
 
-var ResourceToColumns = map[k8s.ResourceType][]table.Column {
-    k8s.Pod: {
-        { Title: "Name", Width: 40 },
-        { Title: "Namespace", Width: 15 },
-        { Title: "Container count", Width: 15 },
-        { Title: "Phase", Width: 20 },
-    },
-    k8s.Deployment: {
-        { Title: "Name", Width: 40 },
-        { Title: "Namespace", Width: 20 },
-    },
-    k8s.Ingress: {
-        { Title: "Name", Width: 40 },
-        { Title: "Namespace", Width: 20 },
-    },
+func GetColumns(resourceType k8s.ResourceType) []table.Column  {
+    return resourceHandlers[resourceType].Columns()
 }
 
 func Get(
@@ -78,7 +70,7 @@ func GetRows(
 
 func GetTable(resourceType k8s.ResourceType) table.Model {
     return table.New(
-        table.WithColumns(ResourceToColumns[resourceType]),
+        table.WithColumns(GetColumns(resourceType)),
         table.WithRows([]table.Row{}),
     )
 }

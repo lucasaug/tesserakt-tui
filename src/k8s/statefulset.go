@@ -2,44 +2,41 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
-	"k8s.io/api/core/v1"
+	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-type PodResource v1.Pod
+type StatefulSetResource v1.StatefulSet
 
-func (pr PodResource) Values() []string {
+func (pr StatefulSetResource) Values() []string {
     return []string{
         pr.Name,
         pr.Namespace,
-        fmt.Sprint(len(pr.Spec.Containers)),
-        string(pr.Status.Phase),
     }
 }
 
-func (pr PodResource) ResourceName() string {
+func (pr StatefulSetResource) ResourceName() string {
     return pr.Name
 }
 
-func (pr PodResource) ResourceNamespace() string {
+func (pr StatefulSetResource) ResourceNamespace() string {
     return pr.Namespace
 }
 
-type PodHandler struct {
-    list []PodResource
+type StatefulSetHandler struct {
+    list []StatefulSetResource
 }
 
-func (ph PodHandler) List(
+func (ph StatefulSetHandler) List(
     clientset *kubernetes.Clientset,
     namespace string,
 ) ([]ResourceInstance, error) {
     pods, err := clientset.
-        CoreV1().
-        Pods(namespace).
+        AppsV1().
+        StatefulSets(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
@@ -47,21 +44,19 @@ func (ph PodHandler) List(
     }
 
     result := []ResourceInstance{}
-    ph.list = []PodResource{}
+    ph.list = []StatefulSetResource{}
     for _, item := range pods.Items {
-        result = append(result, PodResource(item))
-        ph.list = append(ph.list, PodResource(item))
+        result = append(result, StatefulSetResource(item))
+        ph.list = append(ph.list, StatefulSetResource(item))
     }
 
     return result, nil
 }
 
-func (_ PodHandler) Columns() []table.Column {
+func (_ StatefulSetHandler) Columns() []table.Column {
     return []table.Column{
         { Title: "Name", Width: 40 },
         { Title: "Namespace", Width: 15 },
-        { Title: "Container count", Width: 15 },
-        { Title: "Phase", Width: 20 },
     }
 }
 

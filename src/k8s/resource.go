@@ -3,20 +3,31 @@ package k8s
 import (
 	"slices"
 
+	"github.com/charmbracelet/bubbles/table"
 	"k8s.io/client-go/kubernetes"
 )
 
 type ResourceType string
 
 const (
-    Pod        ResourceType = "Pod"
-    Deployment ResourceType = "Deployment"
-    Ingress    ResourceType = "Ingress"
+    Pod         ResourceType = "Pod"
+    Deployment  ResourceType = "Deployment"
+    ReplicaSet  ResourceType = "ReplicaSet"
+    StatefulSet ResourceType = "StatefulSet"
+    DaemonSet   ResourceType = "DaemonSet"
+    Job         ResourceType = "Job"
+    CronJob     ResourceType = "CronJob"
+    Ingress     ResourceType = "Ingress"
 )
 
 var Resources = [...]ResourceType{
     Pod,
     Deployment,
+    ReplicaSet,
+    StatefulSet,
+    DaemonSet,
+    Job,
+    CronJob,
     Ingress,
 }
 
@@ -39,6 +50,8 @@ type NamespacedResource interface {
 
 type ResourceHandler interface {
     List(*kubernetes.Clientset, string) ([]ResourceInstance, error)
+    // TODO refactor, we shouldn't depend on bubbles here
+    Columns() []table.Column
 }
 
 func GetResource(

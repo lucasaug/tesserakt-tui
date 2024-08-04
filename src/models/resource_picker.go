@@ -20,13 +20,13 @@ type resourcePicker struct {
 }
 
 func InitialResourcePickerModel() resourcePicker {
-    resourceItems := []table.Row {
-        []string{ string(k8s.Pod) },
-        []string{ string(k8s.Deployment) },
-        []string{ string(k8s.Ingress) },
+    resourceItems := make([]table.Row, 0)
+    for _, res := range k8s.Resources {
+        resourceItems = append(resourceItems, []string{ string(res) })
     }
+
     resourceHeader := []table.Column {
-        { Title: "Resources", Width: 10 },
+        { Title: "Resources", Width: 15 },
     }
 
     listStyle := lipgloss.NewStyle().

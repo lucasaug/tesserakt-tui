@@ -21,11 +21,11 @@ func createStatusBar() statusbar.Model {
         },
         statusbar.ColorConfig{
             Foreground: lipgloss.AdaptiveColor{Light: "15", Dark: "15"},
-            Background: lipgloss.AdaptiveColor{Light: "171", Dark: "171"},
-        },
+            Background: lipgloss.AdaptiveColor{Light: "93", Dark: "93"},
+       },
     )
 
-    sb.SetContent("Connected", "cluster name", "", "UP")
+    sb.SetContent("Connected", "cluster name", "", "")
 
     return sb
 }

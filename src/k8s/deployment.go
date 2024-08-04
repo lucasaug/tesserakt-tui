@@ -1,11 +1,12 @@
 package k8s
 
 import (
-    "context"
+	"context"
 
-    "k8s.io/api/apps/v1"
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/client-go/kubernetes"
+	"github.com/charmbracelet/bubbles/table"
+	"k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type DeploymentResource v1.Deployment
@@ -48,3 +49,9 @@ func (DeploymentHandler) List(
     return result, nil
 }
 
+func (_ DeploymentHandler) Columns() []table.Column {
+    return []table.Column{
+        { Title: "Name", Width: 40 },
+        { Title: "Namespace", Width: 20 },
+    }
+}

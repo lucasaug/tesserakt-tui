@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 
+	"github.com/charmbracelet/bubbles/table"
 	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -48,5 +49,12 @@ func (IngressHandler) List(
     }
 
     return result, nil
+}
+
+func (_ IngressHandler) Columns() []table.Column {
+    return []table.Column{
+        { Title: "Name", Width: 40 },
+        { Title: "Namespace", Width: 20 },
+    }
 }
 

@@ -2,44 +2,41 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
-	"k8s.io/api/core/v1"
+	"k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-type PodResource v1.Pod
+type ReplicaSetResource v1.ReplicaSet
 
-func (pr PodResource) Values() []string {
+func (pr ReplicaSetResource) Values() []string {
     return []string{
         pr.Name,
         pr.Namespace,
-        fmt.Sprint(len(pr.Spec.Containers)),
-        string(pr.Status.Phase),
     }
 }
 
-func (pr PodResource) ResourceName() string {
+func (pr ReplicaSetResource) ResourceName() string {
     return pr.Name
 }
 
-func (pr PodResource) ResourceNamespace() string {
+func (pr ReplicaSetResource) ResourceNamespace() string {
     return pr.Namespace
 }
 
-type PodHandler struct {
-    list []PodResource
+type ReplicaSetHandler struct {
+    list []ReplicaSetResource
 }
 
-func (ph PodHandler) List(
+func (ph ReplicaSetHandler) List(
     clientset *kubernetes.Clientset,
     namespace string,
 ) ([]ResourceInstance, error) {
     pods, err := clientset.
-        CoreV1().
-        Pods(namespace).
+        AppsV1().
+        ReplicaSets(namespace).
         List(context.Background(), metav1.ListOptions{})
 
     if err != nil {
@@ -47,21 +44,19 @@ func (ph PodHandler) List(
     }
 
     result := []ResourceInstance{}
-    ph.list = []PodResource{}
+    ph.list = []ReplicaSetResource{}
     for _, item := range pods.Items {
-        result = append(result, PodResource(item))
-        ph.list = append(ph.list, PodResource(item))
+        result = append(result, ReplicaSetResource(item))
+        ph.list = append(ph.list, ReplicaSetResource(item))
     }
 
     return result, nil
 }
 
-func (_ PodHandler) Columns() []table.Column {
+func (_ ReplicaSetHandler) Columns() []table.Column {
     return []table.Column{
         { Title: "Name", Width: 40 },
         { Title: "Namespace", Width: 15 },
-        { Title: "Container count", Width: 15 },
-        { Title: "Phase", Width: 20 },
     }
 }
 

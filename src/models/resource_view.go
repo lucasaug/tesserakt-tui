@@ -1,18 +1,18 @@
 package models
 
 import (
-	"bytes"
+    "bytes"
 
-	"github.com/alecthomas/chroma/quick"
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"k8s.io/client-go/kubernetes"
+    "github.com/alecthomas/chroma/quick"
+    "github.com/charmbracelet/bubbles/table"
+    "github.com/charmbracelet/bubbles/viewport"
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/charmbracelet/lipgloss"
+    "k8s.io/client-go/kubernetes"
 
-	"github.com/lucasaug/tesserakt-tui/src/commands"
-	"github.com/lucasaug/tesserakt-tui/src/controllers"
-	"github.com/lucasaug/tesserakt-tui/src/k8s"
+    "github.com/lucasaug/tesserakt-tui/src/commands"
+    "github.com/lucasaug/tesserakt-tui/src/controllers"
+    "github.com/lucasaug/tesserakt-tui/src/k8s"
 )
 
 const DEFAULT_RESOURCE = k8s.Pod
@@ -66,7 +66,7 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
         r.itemIndex = 0
 
         currentTable := table.New(
-            table.WithColumns(controllers.ResourceToColumns[r.resourceType]),
+            table.WithColumns(controllers.GetColumns(r.resourceType)),
             table.WithRows([]table.Row{}),
         )
         r.currentTable = &currentTable
@@ -82,7 +82,7 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
             r.resourceType = msg.NewResource
             r.itemIndex = 0
             currentTable := table.New(
-                table.WithColumns(controllers.ResourceToColumns[r.resourceType]),
+                table.WithColumns(controllers.GetColumns(r.resourceType)),
                 table.WithRows([]table.Row{}),
             )
             r.currentTable = &currentTable
@@ -101,15 +101,17 @@ func (r resourceView) Update(msg tea.Msg) (resourceView, tea.Cmd) {
         switch msg.String() {
 
         case "enter":
-            name := r.currentTable.Rows()[r.itemIndex][0]
-            namespace := r.currentTable.Rows()[r.itemIndex][1]
+            if (r.selectedResource[r.resourceType] == nil) {
+                name := r.currentTable.Rows()[r.itemIndex][0]
+                namespace := r.currentTable.Rows()[r.itemIndex][1]
 
-            return r, commands.ResourceDetails(
-                *r.clientset,
-                r.resourceType,
-                name,
-                namespace,
-            )
+                return r, commands.ResourceDetails(
+                    *r.clientset,
+                    r.resourceType,
+                    name,
+                    namespace,
+                )
+            }
 
         case "k", "up":
             if (r.itemIndex > 0 &&
